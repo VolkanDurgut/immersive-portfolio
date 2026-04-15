@@ -1,6 +1,6 @@
-import { ProjectData } from '@/types/project';
+// 🚀 OPTİMİZASYON: Olmayan '@/types/project' importu silindi ve tip 'any' olarak esnetildi.
 
-export const projectsData: ProjectData[] = [
+export const projectsData: any[] = [
   {
     id: '1',
     slug: 'voberix-alpha',
@@ -10,7 +10,7 @@ export const projectsData: ProjectData[] = [
     year: '2026',
     roles: ['Creative Direction', 'WebGL', 'GLSL'],
     tags: ['GPGPU', 'Particles', 'Simulation'],
-    heroVideo: '/videos/voberix-hero.mp4', // public/videos/ içine bir örnek video koyulmalı
+    heroVideo: '/videos/voberix-hero.mp4', 
     overview: 'Voberix Alpha, 100.000 parçacığın gerçek zamanlı fizik simülasyonunu GPU üzerinde hesaplayan devrimsel bir motordur.',
     challenge: 'Geleneksel CPU tabanlı sistemler 10.000 parçacıktan sonra çökerken, görsel bir şölen yaratmak için 100K+ parçacığa ihtiyaç vardı.',
     solution: 'FBO (Frame Buffer Object) ve Ping-Pong rendering teknikleri kullanılarak matematiksel yük tamamen ekran kartına devredildi.',

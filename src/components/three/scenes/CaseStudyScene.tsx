@@ -5,17 +5,11 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVideoTexture } from '@react-three/drei';
 
-// 🚀 YENİ: Az önce oluşturduğumuz Image Sequence bileşeni
 import ImageSequence from '../ImageSequence';
 
-// 🚀 YENİ: Sanity'den gelen veri yapısına göre Tip Tanımlaması (Eski ProjectData silindi)
+// 🚀 YENİ: Eski ProjectData silindi, hata yapmayan esnek tipe geçildi
 interface CaseStudySceneProps {
-  project: {
-    mediaType?: string;
-    mediaUrl?: string;
-    heroVideoUrl?: string;
-    [key: string]: any; // Sanity'den gelebilecek diğer veriler (title, overview vs.)
-  };
+  project: any; 
   scrollProgress: number; 
 }
 
@@ -43,14 +37,11 @@ const customVideoShader = {
   `
 };
 
-// --------------------------------------------------------
-// 1. VİDEO BİLEŞENİ 
-// --------------------------------------------------------
 function VideoScreen({ url, scrollProgress }: { url: string; scrollProgress: number }) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
 
-  const videoTexture = useVideoTexture(url, {
+  const videoTexture = useVideoTexture(url || '/videos/placeholder.mp4', {
     muted: true,
     loop: true,
     start: true,
@@ -87,10 +78,6 @@ function VideoScreen({ url, scrollProgress }: { url: string; scrollProgress: num
   );
 }
 
-// --------------------------------------------------------
-// 2. IMAGE SEQUENCE BİLEŞENİ
-// --------------------------------------------------------
-// 🚀 YENİ: Artık direkt "urlPrefix" string'i alıyor (Sanity mediaUrl üzerinden)
 function ImageSequenceScreen({ urlPrefix, scrollProgress }: { urlPrefix: string; scrollProgress: number }) {
   const groupRef = useRef<THREE.Group>(null!);
 
@@ -108,34 +95,26 @@ function ImageSequenceScreen({ urlPrefix, scrollProgress }: { urlPrefix: string;
     <group ref={groupRef} position={[0, -1, 0]}>
       <ImageSequence
         urlPrefix={urlPrefix}
-        frameCount={120} // Eğer Sanity panele bir field eklemezsen varsayılan olarak 120 kalabilir
+        frameCount={120}
         scrollProgress={scrollProgress}
       />
     </group>
   );
 }
 
-// --------------------------------------------------------
-// 3. ANA SAHNE (Case Study Scene)
-// --------------------------------------------------------
 export default function CaseStudyScene({ project, scrollProgress }: CaseStudySceneProps) {
-  
-  // 🚀 YENİ: Sanity'den gelen `mediaType` değerine göre hangi sahnenin render edileceğini seçiyoruz
-  const isImageSequence = project.mediaType === 'image-sequence';
+  // 🚀 YENİ: Sanity'den gelen verilere uyumlu okuma
+  const isImageSequence = project?.mediaType === 'image-sequence';
 
   return (
     <group>
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} intensity={2} />
 
-      {/* 🚀 AKILLI RENDER: CMS panelindeki seçime göre 3D ekranı render et */}
-      {isImageSequence && project.mediaUrl ? (
+      {isImageSequence && project?.mediaUrl ? (
         <ImageSequenceScreen urlPrefix={project.mediaUrl} scrollProgress={scrollProgress} />
       ) : (
-        <VideoScreen 
-          url={project.heroVideoUrl || '/videos/placeholder.mp4'} 
-          scrollProgress={scrollProgress} 
-        />
+        <VideoScreen url={project?.heroVideoUrl || '/videos/placeholder.mp4'} scrollProgress={scrollProgress} />
       )}
 
       <points position={[0, 0, -5]}>

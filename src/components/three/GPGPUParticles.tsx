@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { useNavStore } from '@/store/useStore';
 
-// --- SHADER'LAR DEĞİŞMEDİ, AYNI KALIYOR ---
+// --- SHADER'LAR ---
 const simulationVertexShader = `
   varying vec2 vUv;
   void main() {
@@ -33,51 +33,97 @@ const simulationFragmentShader = `
   }
 
   void main() {
-    vec3 pos = texture2D(positions, vUv).xyz;
+    // 🚀 1. Pozisyon ve Yaş verisini okuyoruz (Alpha/W kanalı)
+    vec4 posData = texture2D(positions, vUv);
+    vec3 pos = posData.xyz;
+    float age = posData.w;
+
+    // Her frame'de yaşı artır. 1.0'ı geçince sıfırla (yeniden doğuş)
+    age += 0.005 + rand(vUv) * 0.005;
+    if(age > 1.0) age = 0.0;
+
     vec3 kure = texture2D(targetKure, vUv).xyz;
     vec3 kutu = texture2D(targetKutu, vUv).xyz;
     vec3 torus = texture2D(targetTorus, vUv).xyz;
     vec3 targetPos = kure;
     if (uShape == 1) targetPos = kutu;
     else if (uShape == 2) targetPos = torus;
-    pos = mix(pos, targetPos, 0.03);
+    
+    // 🚀 4. Parçacıkların %30'u daha yavaş hareket etsin
+    float speedMult = rand(vUv) < 0.3 ? 0.1 : 1.0;
+
+    // Hedefe gitme ve yavaşlık çarpanı
+    pos = mix(pos, targetPos, 0.03 * speedMult);
+    
     float dist = distance(pos.xy, uMouse * 20.0);
     if (dist < 4.0) {
       vec3 dir = normalize(pos - vec3(uMouse * 20.0, pos.z));
-      pos += dir * (4.0 - dist) * 0.15;
+      pos += dir * (4.0 - dist) * 0.15 * speedMult;
     }
-    pos.y += sin(uTime * 1.5 + pos.x * 0.5) * 0.01;
-    pos.x += cos(uTime * 1.5 + pos.y * 0.5) * 0.01;
+    pos.y += sin(uTime * 1.5 + pos.x * 0.5) * 0.01 * speedMult;
+    pos.x += cos(uTime * 1.5 + pos.y * 0.5) * 0.01 * speedMult;
+    
     if (uExplosion > 0.0) {
       vec3 randomDir = normalize(pos) + vec3(rand(vUv) - 0.5, rand(vUv + 1.0) - 0.5, rand(vUv + 2.0) - 0.5);
       pos += randomDir * uExplosion * (15.0 + rand(vUv) * 10.0);
     }
-    gl_FragColor = vec4(pos, 1.0);
+    
+    // 🚀 1. Yeni pozisyonu ve yeni YAŞI (W kanalı) kaydet
+    gl_FragColor = vec4(pos, age);
   }
 `;
 
 const renderVertexShader = `
   uniform sampler2D uPositions;
   uniform float uExplosion;
+  uniform vec3 uCameraPos; // 🚀 5. Kamera pozisyonu
+  
   varying vec3 vColor;
+  varying float vAge;
+  varying float vCamDist;
+
   void main() {
-    vec3 pos = texture2D(uPositions, position.xy).xyz;
+    vec4 posData = texture2D(uPositions, position.xy);
+    vec3 pos = posData.xyz;
+    float age = posData.w;
+
     vec3 colorNear = vec3(0.0, 1.0, 1.0);
     vec3 colorFar = vec3(1.0, 0.0, 1.0);
     vec3 baseColor = mix(colorFar, colorNear, smoothstep(-5.0, 5.0, pos.z + pos.y));
-    vColor = mix(baseColor, vec3(1.0, 1.0, 1.0), uExplosion * 2.0);
+    
+    // 🚀 2. Genç parçacıklar beyaz, yaşlılar cyan/magenta
+    vec3 finalColor = mix(vec3(1.0), baseColor, smoothstep(0.0, 0.4, age));
+    vColor = mix(finalColor, vec3(1.0, 1.0, 1.0), uExplosion * 2.0);
+
+    // Fragment shader'a verileri ilet
+    vAge = age;
+    vCamDist = distance(pos, uCameraPos);
+
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    gl_PointSize = 3.0 * (10.0 / -mvPosition.z);
+    
+    // 🚀 3. Perspektif ve Yaş çarpanlı dinamik point size
+    float baseSize = 25.0; 
+    gl_PointSize = (baseSize / -mvPosition.z) * (1.0 - age * 0.5);
+    
     gl_Position = projectionMatrix * mvPosition;
   }
 `;
 
 const renderFragmentShader = `
   varying vec3 vColor;
+  varying float vAge;
+  varying float vCamDist;
+
   void main() {
     float dist = distance(gl_PointCoord, vec2(0.5));
     if (dist > 0.5) discard;
-    gl_FragColor = vec4(vColor, smoothstep(0.5, 0.1, dist) * 0.8);
+    
+    // 🚀 5. Kameraya yaklaştıkça artan parlaklık ve yaşa bağlı solma
+    float proximityGlow = smoothstep(10.0, 2.0, vCamDist);
+    float alpha = (1.0 - vAge * 0.6) + (proximityGlow * 0.8);
+    
+    float strength = smoothstep(0.5, 0.1, dist);
+    gl_FragColor = vec4(vColor, strength * alpha * 0.8);
   }
 `;
 
@@ -106,7 +152,8 @@ export default function GPGPUParticles({ tier }: { tier: string }) {
       initialArr[i4] = (Math.random() - 0.5) * 30;
       initialArr[i4+1] = (Math.random() - 0.5) * 30;
       initialArr[i4+2] = (Math.random() - 0.5) * 30;
-      initialArr[i4+3] = 1;
+      // Yaş başlangıç değeri olarak rastgele bir değer atıyoruz
+      initialArr[i4+3] = Math.random(); 
 
       const r = 6 + (Math.random() * 1.5);
       const theta = Math.random() * Math.PI * 2;
@@ -131,7 +178,6 @@ export default function GPGPUParticles({ tier }: { tier: string }) {
       torusArr[i4+3] = 1;
     }
 
-    // 🚀 OPTİMİZASYON: Tip uyuşmazlığını gidermek için as any ekledik (nocheck ile birlikte çifte güvenlik)
     const make = (arr: Float32Array) => {
       const t = new THREE.DataTexture(arr as any, size, size, THREE.RGBAFormat, THREE.FloatType);
       t.needsUpdate = true;
@@ -227,6 +273,8 @@ export default function GPGPUParticles({ tier }: { tier: string }) {
     if (renderMaterialRef.current) {
       renderMaterialRef.current.uniforms.uPositions.value = nextTexture;
       renderMaterialRef.current.uniforms.uExplosion.value = explosionForce.current;
+      // 🚀 YENİ EKLENDİ: Kameranın anlık pozisyonunu aktar
+      renderMaterialRef.current.uniforms.uCameraPos.value.copy(state.camera.position);
     }
 
     pingPong.current++;
@@ -243,7 +291,8 @@ export default function GPGPUParticles({ tier }: { tier: string }) {
         fragmentShader={renderFragmentShader}
         uniforms={{
           uPositions: { value: null },
-          uExplosion: { value: 0 }
+          uExplosion: { value: 0 },
+          uCameraPos: { value: new THREE.Vector3() } // 🚀 YENİ EKLENDİ
         }}
         blending={THREE.AdditiveBlending}
         depthWrite={false}

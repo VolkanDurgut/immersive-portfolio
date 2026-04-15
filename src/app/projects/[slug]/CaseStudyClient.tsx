@@ -12,18 +12,29 @@ import Link from 'next/link';
 import CaseStudyScene from '@/components/three/scenes/CaseStudyScene';
 import Loader from '@/components/three/Loader';
 import PageTransition from '@/components/three/PageTransition';
-import { ProjectData } from '@/types/project';
+
+// 🚀 YENİ: Eski (sabit) ProjectData silindi!
+// Yerine Sanity'den gelecek verilere uygun, esnek bir TypeScript arayüzü tanımladık.
+interface SanityProject {
+  title?: string;
+  category?: string;
+  client?: string;
+  year?: string;
+  challenge?: string;
+  solution?: string;
+  [key: string]: any; // Sanity'den gelebilecek diğer ekstra alanlar için
+}
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export default function CaseStudyClient({ project }: { project: ProjectData }) {
+// 🚀 YENİ: project prop'u artık yeni Sanity tipimizi kullanıyor
+export default function CaseStudyClient({ project }: { project: SanityProject }) {
   const { setCursorMode } = useNavStore();
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
-    // ScrollTrigger ile sayfa kaydırma yüzdesini (0 ile 1 arası) 3D sahneye aktarıyoruz
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: "#case-study-container",
@@ -45,7 +56,6 @@ export default function CaseStudyClient({ project }: { project: ProjectData }) {
         <Canvas camera={{ position: [0, 0, 8], fov: 45 }} gl={{ antialias: false }}>
           <color attach="background" args={['#050505']} />
           <Suspense fallback={<Loader />}>
-            {/* Scroll bilgisini ve proje verisini 3D sahneye iletiyoruz */}
             <CaseStudyScene project={project} scrollProgress={scrollProgress} />
             <PageTransition />
           </Suspense>
@@ -65,26 +75,26 @@ export default function CaseStudyClient({ project }: { project: ProjectData }) {
           >
             [ GERİ DÖN ]
           </Link>
-          <div className="text-xs font-mono text-gray-500">{project.category}</div>
+          <div className="text-xs font-mono text-gray-500">{project.category || 'PROJE'}</div>
         </nav>
 
         {/* Hero Section */}
         <section className="h-screen flex flex-col justify-end p-8 md:p-24 pb-24">
           <h1 className="text-6xl md:text-[8rem] font-black tracking-tighter leading-none mb-4 mix-blend-difference">
-            {project.title}
+            {project.title || 'Başlıksız Proje'}
           </h1>
           <div className="flex gap-8 text-sm font-mono tracking-widest mix-blend-difference">
-            <div>MÜŞTERİ: {project.client}</div>
-            <div>YIL: {project.year}</div>
+            <div>MÜŞTERİ: {project.client || 'Bilinmiyor'}</div>
+            <div>YIL: {project.year || '2024'}</div>
           </div>
         </section>
 
-        {/* İçerik Blokları (Arkadaki 3D Video objesi scroll ile bunlara eşlik edecek) */}
+        {/* İçerik Blokları */}
         <section className="min-h-screen flex items-center p-8 md:p-24">
           <div className="max-w-2xl bg-[#050505]/40 backdrop-blur-md p-8 border-l-2 border-cyan-400">
             <h3 className="text-cyan-400 font-mono tracking-widest mb-4">01 // THE CHALLENGE</h3>
             <p className="text-2xl md:text-4xl font-light leading-relaxed">
-              {project.challenge}
+              {project.challenge || 'Zorluk metni bekleniyor...'}
             </p>
           </div>
         </section>
@@ -93,12 +103,12 @@ export default function CaseStudyClient({ project }: { project: ProjectData }) {
           <div className="max-w-2xl bg-[#050505]/40 backdrop-blur-md p-8 border-r-2 border-fuchsia-500 text-right">
             <h3 className="text-fuchsia-500 font-mono tracking-widest mb-4">02 // THE SOLUTION</h3>
             <p className="text-2xl md:text-4xl font-light leading-relaxed">
-              {project.solution}
+              {project.solution || 'Çözüm metni bekleniyor...'}
             </p>
           </div>
         </section>
 
-        {/* Next Project / Footer (Sonraki projeye/ana sayfaya geçiş) */}
+        {/* Next Project / Footer */}
         <section className="h-[50vh] flex items-center justify-center">
           <Link 
             href="/"

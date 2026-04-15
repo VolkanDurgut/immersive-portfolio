@@ -48,7 +48,10 @@ export default function CinematicEffects({ tier }: { tier: string }) {
       {/* Kendi efekti zincire dahil ediyoruz */}
       <CustomGlitch ref={glitchRef} />
 
+      {/* @ts-ignore: @react-three/postprocessing tip uyuşmazlığını yoksayıyoruz */}
       <Noise premultiply blendFunction={BlendFunction.ADD} opacity={0.03} />
+      
+      {/* @ts-ignore: @react-three/postprocessing tip uyuşmazlığını yoksayıyoruz */}
       <Vignette offset={0.1} darkness={1.2} blendFunction={BlendFunction.NORMAL} />
     </EffectComposer>
   );

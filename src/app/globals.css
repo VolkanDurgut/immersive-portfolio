@@ -5,17 +5,11 @@
 @layer base {
   :root {
     /* --- VOBERIX BRAND RENK SİSTEMİ --- */
-    
-    /* Neon Vurgular */
-    --color-neon-cyan: #22d3ee;    /* Modern Siber Mavi */
-    --color-neon-magenta: #d946ef; /* Agresif Siber Pembe/Mor */
-    --color-neon-amber: #ffaa00;   /* Uyarı ve İkincil Vurgu */
-    
-    /* Arka Plan ve Yüzeyler */
-    --color-bg-deep: #050505;      /* Saf boşluk/uzay hissiyatı */
-    --color-bg-surface: #111111;   /* Kart ve menü arka planları */
-    
-    /* Metin Renkleri */
+    --color-neon-cyan: #22d3ee;    
+    --color-neon-magenta: #d946ef; 
+    --color-neon-amber: #ffaa00;   
+    --color-bg-deep: #050505;      
+    --color-bg-surface: #111111;   
     --color-text-main: #ffffff;
     --color-text-muted: #9ca3af;
   }
@@ -28,21 +22,52 @@ html, body {
   height: 100%;
   background-color: var(--color-bg-deep);
   color: var(--color-text-main);
-  
-  /* Lenis ile smooth scroll ekleyene kadar şimdilik scroll'u kapatıyoruz */
   overflow: hidden; 
-  
-  /* Tipografi Optimizasyonu: Fontların ekranda daha keskin ve pürüzsüz durmasını sağlar */
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar'ı tüm tarayıcılarda gizle (WebGL deneyimi için temiz ekran) */
 ::-webkit-scrollbar {
   display: none;
 }
 * {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* 🚀 YENİ: AŞAMA 1 (PRE-LOAD) SİBERPUNK CSS ANİMASYONLARI */
+
+/* 1. Neon Logo Nabız Efekti */
+@keyframes pulse-neon {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 10px var(--color-neon-cyan), 0 0 20px var(--color-neon-cyan);
+  }
+  50% {
+    opacity: 0.5;
+    text-shadow: 0 0 2px var(--color-neon-cyan), 0 0 5px var(--color-neon-cyan);
+  }
+}
+
+.animate-pulse-neon {
+  animation: pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 2. Değişen Koordinatlar / Glitch Efekti (JavaScript'siz!) */
+@keyframes coords-flicker {
+  0% { content: "[ INITIALIZING... ]"; }
+  15% { content: "[ 41.0082° N, 28.9784° E ]"; }
+  30% { content: "[ ESTABLISHING SECURE CONNECTION ]"; }
+  45% { content: "[ 35.6895° N, 139.6917° E ]"; }
+  60% { content: "[ LOADING WEBGL CONTEXT... ]"; }
+  75% { content: "[ 51.5074° N, 0.1278° W ]"; }
+  90% { content: "[ MOUNTING SCENE NODES ]"; }
+  100% { content: "[ VOBERIX KERNEL READY ]"; }
+}
+
+.loader-coords::after {
+  content: "[ INITIALIZING... ]";
+  /* steps(1) ile akıcı geçiş yerine kesik kesik (terminal) gibi geçer */
+  animation: coords-flicker 3s infinite steps(1); 
 }

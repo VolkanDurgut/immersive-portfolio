@@ -14,7 +14,8 @@ export default function Home() {
   const { 
     currentView, setView, isTransitioning, 
     cursorMode, setCursorMode, isLoading,
-    isContactOpen, setContactOpen 
+    isContactOpen, setContactOpen,
+    loadProgress // 🚀 YENİ: Hata buradan kaynaklanıyordu, state'i store'dan çekiyoruz
   } = useNavStore();
   const cursorRef = useRef<HTMLDivElement>(null);
 
@@ -60,11 +61,34 @@ export default function Home() {
       <div 
         role="status"
         aria-live="polite"
-        className={`absolute inset-0 z-50 flex flex-col items-center justify-center bg-bg-deep transition-all duration-1000 ease-in-out ${isLoading ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`absolute inset-0 z-50 flex flex-col items-center justify-center transition-all duration-1000 ease-in-out
+          ${isLoading ? 'opacity-100 pointer-events-auto bg-bg-deep/95 backdrop-blur-md' : 'opacity-0 pointer-events-none scale-125 blur-2xl'}
+        `}
       >
-        <div className="w-16 h-16 border-4 border-neon-cyan/20 border-t-neon-cyan rounded-full animate-spin mb-8" />
-        <div className="text-neon-cyan font-mono text-sm uppercase tracking-widest animate-pulse">
-          SİBER UZAY BAŞLATILIYOR...
+        {/* Aşama 1: Logo (Pure CSS Pulse) */}
+        <h1 className="text-5xl md:text-7xl font-display font-black tracking-[0.2em] text-text-main animate-pulse-neon mb-6 select-none">
+          VOBERIX<span className="text-neon-cyan">.</span>
+        </h1>
+
+        {/* Aşama 1: Koordinat Terminali (Pure CSS Steps) */}
+        <div className="text-neon-cyan font-mono text-xs md:text-sm tracking-widest loader-coords h-6 mb-12 opacity-80" />
+
+        {/* Aşama 2: R3F Asset Yükleme Çubuğu (Zustand loadProgress) */}
+        <div className="w-64 h-[2px] bg-white/10 rounded overflow-hidden relative">
+          <div 
+            className="h-full bg-neon-cyan transition-all duration-300 shadow-[0_0_15px_var(--color-neon-cyan)]" 
+            style={{ width: `${loadProgress}%` }} 
+          />
+        </div>
+        
+        {/* Yüzde ve Metin */}
+        <div className="flex justify-between w-64 mt-3">
+          <div className="text-[10px] text-text-muted font-mono uppercase tracking-[0.3em]">
+            Sistem Verileri
+          </div>
+          <div className="text-[10px] text-neon-cyan font-mono tracking-widest font-bold">
+            {Math.round(loadProgress)}%
+          </div>
         </div>
       </div>
 

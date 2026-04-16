@@ -1,44 +1,67 @@
 'use client';
 
-import { useEffect } from 'react';
-import { Html, useProgress } from '@react-three/drei';
+import { useEffect, useRef } from 'react';
+import { useProgress } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useNavStore } from '@/store/useStore';
+import gsap from 'gsap';
 
 export default function Loader() {
   const { progress } = useProgress();
-  const { setIsLoading } = useNavStore();
+  const { setIsLoading, setLoadProgress } = useNavStore();
+  const { camera, scene } = useThree();
+  
+  const initialZ = useRef(camera.position.z);
 
-  // Yükleme %100 olduğunda global kilitleri kaldır
+  // 1. Progress'i UI için global store'a yaz
   useEffect(() => {
-    if (progress >= 100) {
-      // Geçişin zarif hissettirmesi için minik bir gecikme (delay) ekliyoruz
-      const timeout = setTimeout(() => setIsLoading(false), 800);
-      return () => clearTimeout(timeout);
-    }
-  }, [progress, setIsLoading]);
+    setLoadProgress(progress);
+  }, [progress, setLoadProgress]);
 
-  // Güvenlik: Bileşen ekrandan silindiğinde (Suspense başarılı olduğunda) kilidi kesin aç
+  // 2. Kademeli Asset Reveal Sistemi
+  useFrame(() => {
+    // Sahnedeki tüm objeleri tarayarak yüzdelik dilime göre görünürlüklerini aç
+    scene.traverse((child: any) => {
+      // 0-30%: Sadece Parçacıklar
+      if (child.isPoints) {
+        child.visible = true; 
+      }
+      // 30-70%: LavaSphere veya ana nesneler
+      else if (child.isMesh && !child.name.toLowerCase().includes('text')) {
+        child.visible = progress > 30;
+      }
+      // 70-100%: Tipografi ve diğer detaylar
+      else if (child.isMesh && (child.geometry?.type === 'TextGeometry' || child.name.toLowerCase().includes('text'))) {
+        child.visible = progress > 70;
+      }
+    });
+  });
+
+  // 3. SİNEMATİK UÇUŞ (Kamera Koreografisi)
   useEffect(() => {
-    return () => setIsLoading(false);
-  }, [setIsLoading]);
+    // Yükleme ekranı başladığında kamerayı 15 birim geriye çek
+    camera.position.z += 15;
 
-  return (
-    <Html center zIndexRange={[100, 0]}>
-      {/* mix-blend-difference ile arka planla çok şık bir kontrast yakalar */}
-      <div className="flex flex-col items-center justify-center pointer-events-none mix-blend-difference">
-        <div className="text-cyan-400 font-mono text-5xl font-black tracking-widest drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]">
-          {progress.toFixed(0)}%
-        </div>
-        <div className="w-64 h-[2px] bg-white/10 mt-6 rounded overflow-hidden relative">
-          <div 
-            className="h-full bg-cyan-400 transition-all duration-300 shadow-[0_0_10px_rgba(34,211,238,1)]" 
-            style={{ width: `${progress}%` }} 
-          />
-        </div>
-        <div className="text-[10px] text-cyan-400/60 font-mono mt-3 uppercase tracking-[0.4em]">
-          Saha Verileri Çekiliyor
-        </div>
-      </div>
-    </Html>
-  );
+    // Suspense (Yükleme) bittiğinde component unmount olur, cleanup fonksiyonu tetiklenir
+    return () => {
+      // Bütün objeleri garanti görünür yap
+      scene.traverse((child: any) => { if (child.isMesh || child.isPoints) child.visible = true; });
+
+      // Kamerayı ana pozisyonuna fırlat
+      gsap.to(camera.position, {
+        z: initialZ.current,
+        duration: 2.5,
+        ease: "power4.inOut"
+      });
+
+      // UI Overlay'i (Karanlık perdeyi) uçuşun yarısında zarifçe kaldır
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1200);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // UI'ı page.tsx yönetecek, burada DOM render etmiyoruz
+  return null; 
 }

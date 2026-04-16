@@ -11,7 +11,7 @@ import { useNavStore } from '@/store/useStore';
 // Sayfa içerikleri ve renklendirmeleri
 const content = {
   home: { 
-    title: 'SIBER UZAYA', // Text3D Türkçe karakterlerde (ş, ğ vb.) bazen font json sınırlarına takılır, o yüzden güvenli ASCII kullandık
+    title: 'SIBER UZAYA', 
     subtitle: 'HOS GELDINIZ', 
     desc: "50.000 parçacık ve sinematik ışıklandırma ile web'in sınırlarını zorluyoruz.",
     color: '#00ffff'
@@ -68,8 +68,12 @@ export default function SceneText({ tier }: { tier: string }) {
       tl.fromTo(groupRef.current.scale, { x: 0.01, y: 0.01, z: 0.01 }, { x: 1, y: 1, z: 1, duration: 0.8, ease: 'back.out(1.2)' }, 0);
       
       if (materialRef.current) {
-        gsap.to(materialRef.current.color, { value: new THREE.Color(activeContent.color), duration: 0.5 });
-        gsap.to(materialRef.current.emissive, { value: new THREE.Color(activeContent.color), duration: 0.5 });
+        // 🚀 DÜZELTME: GSAP Color Animasyonları "r, g, b" kanalları üzerinden yapılıyor
+        const targetColor = new THREE.Color(activeContent.color);
+        
+        gsap.to(materialRef.current.color, { r: targetColor.r, g: targetColor.g, b: targetColor.b, duration: 0.5 });
+        gsap.to(materialRef.current.emissive, { r: targetColor.r, g: targetColor.g, b: targetColor.b, duration: 0.5 });
+        
         tl.to(materialRef.current, { opacity: 1, emissiveIntensity: 2.5, duration: 0.8 }, 0);
       }
     }
@@ -102,7 +106,6 @@ export default function SceneText({ tier }: { tier: string }) {
         position={[0, 0.5, 0]}
       >
         {activeContent.title}
-        {/* Ortak materyali Text3D'ye uygula */}
         <primitive object={materialRef.current || new THREE.MeshStandardMaterial()} attach="material" />
       </Text3D>
 
@@ -123,7 +126,6 @@ export default function SceneText({ tier }: { tier: string }) {
       <Html
         position={[0, -1.5, 0.2]}
         className="w-72 md:w-96 pointer-events-none"
-        // 🚀 Cihaz 'low' tier ise performansı korumak için 3D dönüşümü (transform) kapat, normal div gibi davransın
         transform={tier !== 'low'} 
         distanceFactor={8}
       >

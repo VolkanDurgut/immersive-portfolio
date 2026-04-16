@@ -6,26 +6,27 @@ interface NavState {
   cursorMode: 'default' | 'hover' | 'drag' | 'locked';
   isLoading: boolean;
   
-  // İletişim Formu (Contact) State'leri
   isContactOpen: boolean;
-  focusedInput: string | null; // Hangi input'a tıklandı? (Parçacık efekti için)
-  formStatus: 'idle' | 'submitting' | 'success' | 'error'; // Gönderim animasyonları için
+  focusedInput: string | null;
+  formStatus: 'idle' | 'submitting' | 'success' | 'error';
   
-  // 🚀 YENİ: Portal Geçişi Merkezi Koordinatları
   portalCenter: { x: number; y: number };
+  
+  // 🚀 YENİ: Sahne varlıklarının yüklenme yüzdesi (0-100)
+  loadProgress: number; 
   
   setView: (view: NavState['currentView']) => void;
   setTransitioning: (status: boolean) => void;
   setCursorMode: (mode: NavState['cursorMode']) => void;
   setIsLoading: (status: boolean) => void;
   
-  // İletişim Formu Aksiyonları
   setContactOpen: (status: boolean) => void;
   setFocusedInput: (inputId: string | null) => void;
   setFormStatus: (status: NavState['formStatus']) => void;
-
-  // 🚀 YENİ: Portal Merkezi Aksiyonu
   setPortalCenter: (x: number, y: number) => void;
+  
+  // 🚀 YENİ: Yüzdeyi güncelleyen aksiyon
+  setLoadProgress: (progress: number) => void;
 }
 
 export const useNavStore = create<NavState>((set) => ({
@@ -34,13 +35,13 @@ export const useNavStore = create<NavState>((set) => ({
   cursorMode: 'default',
   isLoading: true,
   
-  // İletişim Formu Başlangıç Değerleri
   isContactOpen: false,
   focusedInput: null,
   formStatus: 'idle',
-
-  // Varsayılan olarak ekranın tam ortası (0.5, 0.5)
   portalCenter: { x: 0.5, y: 0.5 },
+  
+  // Varsayılan başlangıç %0
+  loadProgress: 0,
   
   setView: (view) => set({ currentView: view }),
   setTransitioning: (status) => set({ isTransitioning: status }),
@@ -50,7 +51,8 @@ export const useNavStore = create<NavState>((set) => ({
   setContactOpen: (status) => set({ isContactOpen: status }),
   setFocusedInput: (inputId) => set({ focusedInput: inputId }),
   setFormStatus: (status) => set({ formStatus: status }),
-
-  // Koordinatları state'e yazan fonksiyon
   setPortalCenter: (x, y) => set({ portalCenter: { x, y } }),
+  
+  // State güncelleyici
+  setLoadProgress: (progress) => set({ loadProgress: progress }),
 }));

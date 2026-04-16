@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { useMemo, useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
@@ -8,9 +8,16 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-// ✅ DÜZELTME: Modül seviyesinde cache — sayfa geçişlerinde CDN'e tekrar istek atılmaz
+// Modül seviyesinde cache — sayfa geçişlerinde CDN'e tekrar istek atılmaz
 const fontCache: Record<string, any> = {};
 const FONT_URL = 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json';
+
+// 🚀 YENİ: Dışarı açacağımız referans arayüzü
+export interface KineticTypographyRef {
+  group: THREE.Group | null;
+  material: THREE.ShaderMaterial | null;
+  changeText: (newText: string) => void;
+}
 
 const vertexShader = `
   uniform float uProgress;
@@ -34,25 +41,44 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
+  uniform float uOpacity; // 🚀 YENİ: Scroll ile kontrol edilecek opaklık
   varying vec3 vColor;
+  
   void main() {
     float dist = distance(gl_PointCoord, vec2(0.5));
     if (dist > 0.5) discard;
     float glow = smoothstep(0.5, 0.1, dist);
-    gl_FragColor = vec4(vColor, glow);
+    
+    // 🚀 YENİ: uOpacity ile çarpılarak alfa kanalı yönetiliyor
+    gl_FragColor = vec4(vColor, glow * uOpacity);
   }
 `;
 
-export default function KineticTypography() {
+// 🚀 YENİ: Bileşeni forwardRef ile sarıyoruz
+const KineticTypography = forwardRef<KineticTypographyRef, {}>((props, ref) => {
+  const groupRef = useRef<THREE.Group>(null!);
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
+  
   const [geometryData, setGeometryData] = useState<any>(null);
+  const [currentText, setCurrentText] = useState('WELCOME'); // 🚀 YENİ: Dinamik metin
+
+  // 🚀 YENİ: Scroll Koreografının kullanacağı fonksiyon ve objeleri açıyoruz
+  useImperativeHandle(ref, () => ({
+    get group() { return groupRef.current; },
+    get material() { return materialRef.current; },
+    changeText: (newText: string) => {
+      if (newText !== currentText) {
+        setCurrentText(newText);
+      }
+    }
+  }));
 
   useEffect(() => {
     const loader = new FontLoader();
 
-    // ✅ DÜZELTME: Cache'de varsa tekrar yükleme
     const processFont = (font: any) => {
-      const geometry = new TextGeometry('WELCOME', {
+      // Metin artık state'ten dinamik olarak geliyor
+      const geometry = new TextGeometry(currentText, {
         font,
         size: 3,
         depth: 0.2,
@@ -88,22 +114,27 @@ export default function KineticTypography() {
         processFont(font);
       });
     }
-  }, []);
+  }, [currentText]); // 🚀 YENİ: Metin değiştiğinde geometriyi yeniden oluştur
 
   useGSAP(() => {
     if (geometryData && materialRef.current) {
-      gsap.to(materialRef.current.uniforms.uProgress, {
-        value: 1.0,
-        duration: 3.5,
-        ease: 'expo.inOut',
-        delay: 0.5
-      });
+      // Yeni metin geldiğinde parçacıkların toplanma animasyonunu tekrar oynat
+      gsap.fromTo(materialRef.current.uniforms.uProgress, 
+        { value: 0.0 },
+        {
+          value: 1.0,
+          duration: 3.5,
+          ease: 'expo.inOut',
+          delay: 0.2
+        }
+      );
     }
   }, [geometryData]);
 
   const uniforms = useMemo(() => ({
     uProgress: { value: 0.0 },
-    uTime: { value: 0.0 }
+    uTime: { value: 0.0 },
+    uOpacity: { value: 1.0 } // 🚀 YENİ UNIFORM
   }), []);
 
   useFrame((state) => {
@@ -127,7 +158,7 @@ export default function KineticTypography() {
   if (!geometryData) return null;
 
   return (
-    <group position={[0, 2, 4]}>
+    <group ref={groupRef} position={[0, 2, 4]}>
       <points>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" count={geometryData.count} array={geometryData.initialPositions} itemSize={3} />
@@ -149,4 +180,7 @@ export default function KineticTypography() {
       </mesh>
     </group>
   );
-}
+});
+
+KineticTypography.displayName = 'KineticTypography';
+export default KineticTypography;

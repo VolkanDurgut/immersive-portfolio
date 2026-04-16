@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Html, useCursor } from '@react-three/drei';
 import * as THREE from 'three';
@@ -88,18 +88,16 @@ function ProjectNode({ position, color, title, description }: any) {
       />
 
       {/* 4. Tooltip Sistemi (HTML Overlay) */}
-      {/* Objenin tam 3D koordinatına HTML bir element yapıştırır */}
       <Html 
-        position={[0, 0.8, 0]} // Objenin biraz üstünde dursun
+        position={[0, 0.8, 0]} 
         center 
-        distanceFactor={8} // Kameradan uzaklaştıkça küçülmesini sağlar
+        distanceFactor={8} 
         zIndexRange={[100, 0]}
         className={`transition-all duration-500 pointer-events-none ${hovered || active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       >
         <div className="bg-black/80 backdrop-blur-md border border-cyan-500/30 p-4 rounded-lg w-48 text-center shadow-[0_0_15px_rgba(0,255,255,0.2)]">
           <h3 className="text-cyan-400 font-bold text-lg">{title}</h3>
           
-          {/* Sadece tıklandığında açılan ekstra detay kısmı */}
           <div className={`overflow-hidden transition-all duration-500 ${active ? 'max-h-32 mt-2 opacity-100' : 'max-h-0 opacity-0'}`}>
             <p className="text-gray-300 text-xs">{description}</p>
             <button className="mt-3 px-4 py-1 bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 text-xs rounded border border-cyan-500/50 pointer-events-auto transition-colors">
@@ -112,8 +110,20 @@ function ProjectNode({ position, color, title, description }: any) {
   );
 }
 
+// 🚀 YENİ: Dışarı açacağımız referans arayüzü
+export interface InteractiveGalleryRef {
+  group: THREE.Group | null;
+}
+
 // --- ANA GALERİ BİLEŞENİ ---
-export default function InteractiveGallery() {
+const InteractiveGallery = forwardRef<InteractiveGalleryRef, {}>((props, ref) => {
+  const groupRef = useRef<THREE.Group>(null!);
+
+  // 🚀 YENİ: Scroll Koreografının kullanacağı grubu dışarı açıyoruz
+  useImperativeHandle(ref, () => ({
+    get group() { return groupRef.current; }
+  }));
+
   // Projelerimizin verileri ve sahnedeki koordinatları
   const projects = [
     { id: 1, title: "Siber Ticaret", desc: "Next.js ile B2B Platformu", color: "#00ffff", position: [-4, 1, -2] },
@@ -124,7 +134,7 @@ export default function InteractiveGallery() {
   ];
 
   return (
-    <group>
+    <group ref={groupRef}>
       {projects.map((proj) => (
         <ProjectNode 
           key={proj.id}
@@ -136,4 +146,7 @@ export default function InteractiveGallery() {
       ))}
     </group>
   );
-}
+});
+
+InteractiveGallery.displayName = 'InteractiveGallery';
+export default InteractiveGallery;

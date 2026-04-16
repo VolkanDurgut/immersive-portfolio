@@ -18,14 +18,16 @@ import PageTransition from '../PageTransition';
 import CameraController from '../CameraController';
 import ProjectPortal from '../ProjectPortal';
 import LightSource from '../LightSource';
+import MouseTrail from '../MouseTrail';
 
 import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
 import { useDevicePerformance } from '@/hooks/useDevicePerformance';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useParallax } from '@/hooks/useParallax';
 
-// 🚀 Orkestra Şefimizi import ediyoruz
+// 🚀 Merkezi Yöneticiler (Orchestrators & Choreographers)
 import { useSceneOrchestrator } from '@/hooks/useSceneOrchestrator';
+import { useScrollChoreography } from '@/hooks/useScrollChoreography'; // 🚀 YENİ EKLENDİ
 
 function SceneContent({ tier, isReducedMotion, children }: any) {
   const backgroundRef = useRef<THREE.Group>(null!);
@@ -33,13 +35,17 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
   const foregroundRef = useRef<THREE.Group>(null!);
   const [sunMesh, setSunMesh] = useState<THREE.Mesh | null>(null);
 
-  // 🚀 ORKESTRA İÇİN TÜM REFERANSLAR BURADA TOPLANIYOR
+  // 🚀 ORKESTRA VE KOREOGRAF İÇİN TÜM REFERANSLAR BURADA TOPLANIYOR
   const lookAtTarget = useRef(new THREE.Vector3(0, 0, 0));
   const lavaRef = useRef<any>(null);
   const gpgpuRef = useRef<any>(null);
   const lightsRef = useRef<any>(null);
+  
+  // 🚀 YENİ: Scroll sistemi için Tipografi ve Galeri referansları
+  const typoRef = useRef<any>(null);
+  const galleryRef = useRef<any>(null);
 
-  // 🚀 ORKESTRA ŞEFİNE TÜM YETKİLER VERİLDİ
+  // 1. Orkestra Şefi (Menü, Click, Hover Etkileşimleri)
   useSceneOrchestrator({
     lookAtTarget,
     lavaRef,
@@ -52,6 +58,17 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
     enableLights: true 
   });
 
+  // 2. 🚀 YENİ: Scroll Koreografı (Sayfa kaydırma hikayesi - Scrollytelling)
+  useScrollChoreography({
+    lavaRef,
+    gpgpuRef,
+    typoRef,
+    galleryRef,
+    lightsRef
+  }, {
+    enable: true // Debug için kapatıp açılabilir
+  });
+
   useParallax([
     { ref: backgroundRef, intensity: 0.2 },
     { ref: midgroundRef, intensity: 0.5 },
@@ -61,11 +78,9 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
   return (
     <>
       <CameraController targetRef={lookAtTarget} />
-      
-      {/* 🚀 Işıkları Orkestraya Bağlıyoruz */}
+      <MouseTrail />
       <AtmosphericLights ref={lightsRef} />
       <SceneAtmosphere />
-      
       <LightSource ref={setSunMesh} position={[0, 10, -5]} />
 
       {children}
@@ -73,17 +88,19 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
       {!isReducedMotion ? (
         <>
           <group ref={backgroundRef} position={[0, 0, -15]}>
-            {/* 🚀 Parçacıkları Orkestraya Bağlıyoruz */}
             <GPGPUParticles tier={tier} ref={gpgpuRef} />
           </group>
 
           <group ref={midgroundRef} position={[0, 0, -5]}>
             <LavaSphere ref={lavaRef} />
-            <InteractiveGallery />
+            {/* 🚀 Referansı Bağladık */}
+            <InteractiveGallery ref={galleryRef} />
           </group>
 
           <group ref={foregroundRef} position={[0, 0, 0]}>
-            <KineticTypography />
+            {/* 🚀 Referansı Bağladık */}
+            <KineticTypography ref={typoRef} />
+            
             <ProjectPortal position={[-4, 1, 3]} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
             <ProjectPortal position={[4, -1, 3]} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
           </group>

@@ -1,15 +1,16 @@
 'use client';
 
-import { useRef, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// --- snoise3 FONKSİYONLARI AYNI KALIYOR ---
+// 🚀 3D Simplex Noise Algoritması (Ashima Arts)
 const snoise3 = `
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
   vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
   float snoise(vec3 v) {
     const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
     const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
@@ -23,7 +24,10 @@ const snoise3 = `
     vec3 x2 = x0 - i2 + C.yyy;
     vec3 x3 = x0 - D.yyy;
     i = mod289(i);
-    vec4 p = permute( permute( permute( i.z + vec4(0.0, i1.z, i2.z, 1.0 )) + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+    vec4 p = permute( permute( permute(
+               i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+             + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+             + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
     float n_ = 0.142857142857;
     vec3  ns = n_ * D.wyz - D.xzx;
     vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
@@ -85,39 +89,43 @@ const fragmentShader = `
     vec3 extremeHeat = vec3(1.0, 0.8, 0.2);
     
     float mixVal = (vNoise + 1.0) * 0.5;
-    
     vec3 finalColor = mix(darkCrust, magmaGlow, smoothstep(0.1, 0.6, mixVal));
     finalColor = mix(finalColor, extremeHeat, smoothstep(0.6, 1.0, mixVal));
-    
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
 
-// 🚀 YENİ: Dışarı açacağımız referans tipi
+// 🚀 YENİ: Dışarı açacağımız referans arayüzü
 export interface LavaRef {
   speedMultiplier: number;
+  mesh: THREE.Mesh | null;
 }
 
 const LavaSphere = forwardRef<LavaRef, {}>((props, ref) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
-  
-  // 🚀 YENİ: Zamanı ve hız çarpanını tutan iç referans
-  const internalState = useRef({ speedMultiplier: 1.0, accumulatedTime: 0 });
+  const meshRef = useRef<THREE.Mesh>(null!);
 
-  // Orkestra şefinin GSAP ile bu hıza müdahale etmesine izin veriyoruz
-  useImperativeHandle(ref, () => internalState.current);
+  // Zamanı ve hızı tutan obje
+  const api = useMemo(() => ({
+    speedMultiplier: 1.0,
+    get mesh() { return meshRef.current; }
+  }), []);
+
+  // Orkestraya ve GSAP'a objeyi pasla
+  useImperativeHandle(ref, () => api);
+
+  const timeState = useRef({ accumulated: 0 });
 
   useFrame((state, delta) => {
-    // R3F saatini (delta) hız çarpanı ile çarparak biriktiriyoruz (Zıplamaları önler)
-    internalState.current.accumulatedTime += delta * internalState.current.speedMultiplier;
-    
+    // 🚀 Hız çarpanı ile zamanı biriktir (GSAP buradan kontrol edecek)
+    timeState.current.accumulated += delta * api.speedMultiplier;
     if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value = internalState.current.accumulatedTime;
+      materialRef.current.uniforms.uTime.value = timeState.current.accumulated;
     }
   });
 
   return (
-    <mesh position={[0, 0, 0]} scale={1.2}>
+    <mesh ref={meshRef} position={[0, 0, 0]} scale={1.2}>
       <sphereGeometry args={[1, 64, 64]} />
       <shaderMaterial
         ref={materialRef}

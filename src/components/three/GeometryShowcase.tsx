@@ -17,14 +17,15 @@ export default function GeometryShowcase() {
     if (!instancedMeshRef.current) return;
 
     for (let i = 0; i < particleCount; i++) {
-      const x = (Math.random() - 0.5) * 10;
-      const y = (Math.random() - 0.5) * 10;
-      const z = (Math.random() - 0.5) * 10;
+      const x = (Math.random() - 0.5) * 15; // Geniş alana yay
+      const y = (Math.random() - 0.5) * 15;
+      const z = (Math.random() - 0.5) * 15;
       dummy.position.set(x, y, z);
       
       dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
       
-      const scale = Math.random() * 0.15;
+      // 🚀 DÜZELTME: Parçacıklar çok daha zarif ve küçük
+      const scale = Math.random() * 0.05; 
       dummy.scale.set(scale, scale, scale);
 
       dummy.updateMatrix();
@@ -46,9 +47,9 @@ export default function GeometryShowcase() {
   return (
     <group ref={groupRef}>
       
-      {/* 1. OBJE: TorusKnot + Cam Efekti. 🚀 YENİ: envMapIntensity=3 eklendi */}
+      {/* 🚀 DÜZELTME: Objeler merkezden uzaklaştırıldı (x: -7, -8 ve +7) */}
       <Float speed={2} rotationIntensity={1} floatIntensity={2}>
-        <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <mesh position={[-7, 1, -2]} castShadow receiveShadow>
           <torusKnotGeometry args={[0.8, 0.25, 128, 32]} />
           <meshPhysicalMaterial 
             color="#ffffff" transmission={1} ior={1.5} thickness={1.5} roughness={0} metalness={0.1} clearcoat={1}
@@ -57,14 +58,12 @@ export default function GeometryShowcase() {
         </mesh>
       </Float>
 
-      {/* 2. OBJE: Altın Küre. 🚀 YENİ: envMapIntensity=2 eklendi */}
-      <mesh position={[-3, 1, -2]} castShadow receiveShadow>
+      <mesh position={[-8, -2, -3]} castShadow receiveShadow>
         <sphereGeometry args={[0.7, 64, 64]} />
         <meshStandardMaterial color="#ffaa00" metalness={1} roughness={0.15} envMapIntensity={2} />
       </mesh>
 
-      {/* Diğer Objeler Aynı Kalıyor */}
-      <mesh position={[3, 0.5, -1]} castShadow receiveShadow>
+      <mesh position={[7, 0.5, -1]} castShadow receiveShadow>
         <boxGeometry args={[1.2, 1.2, 1.2]} />
         <meshStandardMaterial attach="material-0" color="#ff0044" roughness={0.2} metalness={0.8} />
         <meshStandardMaterial attach="material-1" color="#00ffff" roughness={0.2} metalness={0.8} />
@@ -74,9 +73,10 @@ export default function GeometryShowcase() {
         <meshStandardMaterial attach="material-5" color="#ffff00" roughness={0.5} />
       </mesh>
 
-      <mesh position={[0, -2, -5]} rotation={[-Math.PI / 4, 0, 0]} receiveShadow>
+      {/* Zemin düzlemini iyice aşağı ittik */}
+      <mesh position={[0, -5, -5]} rotation={[-Math.PI / 4, 0, 0]} receiveShadow>
         <planeGeometry args={[15, 15, 20, 20]} />
-        <meshStandardMaterial color="#00ffff" wireframe={true} transparent opacity={0.3} />
+        <meshStandardMaterial color="#00ffff" wireframe={true} transparent opacity={0.15} />
       </mesh>
 
       <instancedMesh ref={instancedMeshRef} args={[undefined, undefined, particleCount]}>

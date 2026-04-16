@@ -158,7 +158,8 @@ const KineticTypography = forwardRef<KineticTypographyRef, {}>((props, ref) => {
   if (!geometryData) return null;
 
   return (
-    <group ref={groupRef} position={[0, 2, 4]}>
+    // 🚀 DÜZELTME: Position kameraya yaklaştırıldı (z: 2) ve merkeze oturtuldu (y: 0.5)
+    <group ref={groupRef} position={[0, 0.5, 2]}>
       <points>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" count={geometryData.count} array={geometryData.initialPositions} itemSize={3} />

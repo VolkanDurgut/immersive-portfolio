@@ -125,7 +125,8 @@ const LavaSphere = forwardRef<LavaRef, {}>((props, ref) => {
   });
 
   return (
-    <mesh ref={meshRef} position={[0, 0, 0]} scale={1.2}>
+    // 🚀 DÜZELTME: Scale 0.6'ya düşürüldü, position sol-alt-arka köşeye çekildi
+    <mesh ref={meshRef} position={[-3, -1.5, -2]} scale={0.6}>
       <sphereGeometry args={[1, 64, 64]} />
       <shaderMaterial
         ref={materialRef}

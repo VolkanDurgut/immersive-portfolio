@@ -18,15 +18,16 @@ import PageTransition from '../PageTransition';
 import CameraController from '../CameraController';
 import ProjectPortal from '../ProjectPortal';
 import LightSource from '../LightSource';
-import MouseTrail from '../MouseTrail'; // 🚀 Entegrasyon Importu
+import MouseTrail from '../MouseTrail';
 import SceneText from '../SceneText'; 
+// 🚀 DÜZELTME: GeometryShowcase import edildi
+import GeometryShowcase from '../GeometryShowcase'; 
 
 import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
 import { useDevicePerformance } from '@/hooks/useDevicePerformance';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useParallax } from '@/hooks/useParallax';
 
-// 🚀 Merkezi Yöneticiler (Orchestrators & Choreographers)
 import { useSceneOrchestrator } from '@/hooks/useSceneOrchestrator';
 import { useScrollChoreography } from '@/hooks/useScrollChoreography'; 
 
@@ -36,17 +37,13 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
   const foregroundRef = useRef<THREE.Group>(null!);
   const [sunMesh, setSunMesh] = useState<THREE.Mesh | null>(null);
 
-  // 🚀 ORKESTRA VE KOREOGRAF İÇİN TÜM REFERANSLAR BURADA TOPLANIYOR
   const lookAtTarget = useRef(new THREE.Vector3(0, 0, 0));
   const lavaRef = useRef<any>(null);
   const gpgpuRef = useRef<any>(null);
   const lightsRef = useRef<any>(null);
-  
-  // 🚀 YENİ: Scroll sistemi için Tipografi ve Galeri referansları
   const typoRef = useRef<any>(null);
   const galleryRef = useRef<any>(null);
 
-  // 1. Orkestra Şefi (Menü, Click, Hover Etkileşimleri)
   useSceneOrchestrator({
     lookAtTarget,
     lavaRef,
@@ -59,7 +56,6 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
     enableLights: true 
   });
 
-  // 2. 🚀 YENİ: Scroll Koreografı (Sayfa kaydırma hikayesi - Scrollytelling)
   useScrollChoreography({
     lavaRef,
     gpgpuRef,
@@ -67,7 +63,7 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
     galleryRef,
     lightsRef
   }, {
-    enable: true // Debug için kapatıp açılabilir
+    enable: true
   });
 
   useParallax([
@@ -79,7 +75,7 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
   return (
     <>
       <CameraController targetRef={lookAtTarget} />
-      <MouseTrail /> {/* 🚀 Entegrasyon Yerleşimi */}
+      <MouseTrail />
       
       <AtmosphericLights ref={lightsRef} />
       <SceneAtmosphere />
@@ -91,6 +87,8 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
         <>
           <group ref={backgroundRef} position={[0, 0, -15]}>
             <GPGPUParticles tier={tier} ref={gpgpuRef} />
+            {/* 🚀 DÜZELTME: Geometriler arka plana eklendi */}
+            <GeometryShowcase />
           </group>
 
           <group ref={midgroundRef} position={[0, 0, -5]}>
@@ -102,8 +100,9 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
             <SceneText tier={tier} />
             <KineticTypography ref={typoRef} />
             
-            <ProjectPortal position={[-4, 1, 3]} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
-            <ProjectPortal position={[4, -1, 3]} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
+            {/* 🚀 DÜZELTME: Portallar scale=0.3 ile küçültüldü ve sağ/sol kenarlara daha nazik oturtuldu */}
+            <ProjectPortal position={[-5, 1.5, 3]} scale={0.3} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
+            <ProjectPortal position={[5, -1.5, 3]} scale={0.3} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
           </group>
 
           {tier !== 'low' && <CinematicEffects tier={tier} sunMesh={sunMesh} />}

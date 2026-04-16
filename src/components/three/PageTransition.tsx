@@ -1,75 +1,69 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { usePathname } from 'next/navigation';
 import { useFBO } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { useNavStore } from '@/store/useStore';
 
-// --- GEÇİŞ SHADER'LARI ---
+// --- GELİŞMİŞ PORTAL & VORTEX SHADER ---
 const vertexShader = `
   varying vec2 vUv;
   void main() {
     vUv = uv;
-    // Full-screen quad için kamera projeksiyonunu iptal edip doğrudan ekrana basıyoruz
     gl_Position = vec4(position, 1.0);
   }
 `;
 
 const fragmentShader = `
-  uniform sampler2D tOldScene; // Eski sayfanın ekran görüntüsü
-  uniform sampler2D tNewScene; // Arka planda render olan yeni sayfa
-  uniform float uProgress;     // 0.0'dan 1.0'a geçiş
-  uniform int uType;           // 0: Dalga, 1: Dissolve, 2: Zoom Blur
+  uniform sampler2D tOldScene;
+  uniform sampler2D tNewScene;
+  uniform float uProgress;     // 1.0 (Eski) -> 0.0 (Yeni)
+  uniform int uType;           // 3: PORTAL
   uniform vec2 uResolution;
+  uniform vec2 uPortalCenter;  // Tıklanan nesnenin ekran merkezi (0-1 arası)
   
   varying vec2 vUv;
 
-  // Rastgelelik (Noise) Fonksiyonu
-  float rand(vec2 co) {
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-  }
-
   void main() {
-    vec4 oldTex = texture2D(tOldScene, vUv);
-    vec4 newTex = texture2D(tNewScene, vUv);
+    vec2 uv = vUv;
     vec4 finalColor;
 
-    if (uType == 0) {
-      // 🌊 1. DALGA GEÇİŞİ (Wave Wipe)
-      float wave = sin(vUv.y * 20.0) * 0.05;
-      // Progress 0'dan 1'e giderken, dalgalı bir çizgi x ekseninde tarama yapar
-      float stepX = smoothstep(uProgress - 0.1, uProgress + 0.1, vUv.x + wave);
+    if (uType == 3) {
+      // 🌀 4. PORTAL VORTEX GEÇİŞİ
+      vec2 center = uPortalCenter;
+      vec2 toCenter = uv - center;
+      toCenter.x *= uResolution.x / uResolution.y; // Aspect ratio düzeltme
       
-      // X eksenini kaydırarak displacement (yırtılma) efekti ekle
-      vec2 distortedUV = vUv;
-      distortedUV.x += (1.0 - stepX) * 0.2 * uProgress;
-      vec4 distortedOld = texture2D(tOldScene, distortedUV);
+      float dist = length(toCenter);
+      float angle = atan(toCenter.y, toCenter.x);
       
-      finalColor = mix(newTex, distortedOld, stepX);
-    } 
-    else if (uType == 1) {
-      // 🔲 2. PIXEL DISSOLVE (Noise)
-      // Ekranı bloklara bölüyoruz
-      float noise = rand(floor(vUv * 50.0));
-      // Noise değeri progress'ten küçükse yeni sahneyi, büyükse eski sahneyi göster
-      float p = smoothstep(uProgress - 0.1, uProgress + 0.1, noise);
-      finalColor = mix(newTex, oldTex, p);
+      // 1. Emme (Vortex) Etkisi: Mesafe azaldıkça dönme artar
+      float spiral = (1.0 - uProgress) * 10.0 / (dist + 0.1);
+      float rotation = angle + spiral;
+      
+      // 2. UV Manipülasyonu: Merkeze doğru daralma
+      // Progress 1.0'dan 0.0'a inerken zoom artar
+      float zoom = mix(1.0, 0.0, 1.0 - uProgress);
+      vec2 distortedUV = center + (uv - center) * uProgress;
+      
+      // 3. Geçiş Sınırı (Circle mask)
+      float radius = smoothstep(0.0, 1.0, 1.0 - uProgress) * 2.0;
+      float mask = smoothstep(radius - 0.2, radius, dist);
+
+      vec4 oldTex = texture2D(tOldScene, distortedUV);
+      vec4 newTex = texture2D(tNewScene, uv); // Yeni sahne arkadan patlayarak gelir
+      
+      finalColor = mix(newTex, oldTex, mask);
     } 
     else {
-      // 🚀 3. ZOOM BLUR (Radial Geçiş)
-      vec2 center = vec2(0.5, 0.5);
-      vec2 toCenter = center - vUv;
-      float dist = length(toCenter);
-      
-      // Merkezi dışa doğru patlatıyoruz
-      vec2 offset = toCenter * (uProgress * 0.5);
-      vec4 blurOld = texture2D(tOldScene, vUv + offset);
-      
-      // Yumuşak opaklık geçişi
-      finalColor = mix(oldTex, newTex, smoothstep(0.0, 1.0, uProgress));
-      finalColor = mix(blurOld, finalColor, uProgress);
+      // Diğer geçiş tipleri (Wave, Dissolve, Zoom Blur) buraya eklenebilir
+      // Mevcut projedeki Zoom Blur'u (uType 2) basitleştirilmiş halde tutuyoruz:
+      vec4 oldTex = texture2D(tOldScene, uv);
+      vec4 newTex = texture2D(tNewScene, uv);
+      finalColor = mix(newTex, oldTex, uProgress);
     }
 
     gl_FragColor = finalColor;
@@ -78,82 +72,80 @@ const fragmentShader = `
 
 export default function PageTransition() {
   const { gl, scene, camera, size } = useThree();
-  const pathname = usePathname(); // Next.js App Router
+  const pathname = usePathname();
+  const { portalCenter, setIsTransitioning: setGlobalTransition } = useNavStore();
   
-  // Eski sahneyi hafızada tutacağımız FBO (Frame Buffer Object)
-  const prevSceneTarget = useFBO(size.width, size.height, {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBAFormat
-  });
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionType, setTransitionType] = useState(3); // Portal varsayılan
+
+  // 1. FBO Hazırlığı
+  const oldSceneTarget = useFBO(size.width, size.height);
+  const newSceneTarget = useFBO(size.width, size.height);
 
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionType, setTransitionType] = useState(1); // Varsayılan: Dissolve
 
-  // Ekran boyutu değiştiğinde FBO'yu ve Uniform'u güncelle
+  // Rota değişimini yakala
   useEffect(() => {
-    prevSceneTarget.setSize(size.width, size.height);
-    if (materialRef.current) {
-      materialRef.current.uniforms.uResolution.value.set(size.width, size.height);
-    }
-  }, [size, prevSceneTarget]);
-
-  // Rota (Sayfa) değiştiğinde tetiklenecek efekt
-  useEffect(() => {
-    // İlk yüklemede çalışma
     if (!materialRef.current) return;
 
-    // 1. ŞU ANKİ SAHNEYİN FOTOĞRAFINI ÇEK (Eski sahne olacak)
-    // Geçiş perdesini görünmez yap ki kendi fotoğrafını çekmesin
-    materialRef.current.visible = false; 
-    gl.setRenderTarget(prevSceneTarget);
+    // A. ESKİ SAHNEYİ YAKALA
+    materialRef.current.visible = false;
+    gl.setRenderTarget(oldSceneTarget);
     gl.render(scene, camera);
-    gl.setRenderTarget(null); // Normal ekrana dön
+    
+    // B. GEÇİŞİ BAŞLAT
+    setIsTransitioning(true);
+    setGlobalTransition(true);
+    
+    materialRef.current.uniforms.uProgress.value = 1.0;
     materialRef.current.visible = true;
 
-    // 2. Geçiş tipini rastgele seç (Her sayfada farklı sinematik etki)
-    setTransitionType(Math.floor(Math.random() * 3));
-
-    // 3. Geçiş Animasyonunu Başlat
-    setIsTransitioning(true);
-    
-    // uProgress: 1.0 (Tamamen eski sahne) -> 0.0 (Tamamen yeni sahne)
-    materialRef.current.uniforms.uProgress.value = 1.0;
-    
+    // C. GSAP PORTAL ANİMASYONU (1.5s - Power4)
     gsap.to(materialRef.current.uniforms.uProgress, {
       value: 0.0,
-      duration: 1.2,
-      ease: "power2.inOut",
+      duration: 1.5,
+      ease: "power4.inOut",
       onComplete: () => {
         setIsTransitioning(false);
+        setGlobalTransition(false);
+        gl.setRenderTarget(null);
       }
     });
 
-  }, [pathname, gl, scene, camera, prevSceneTarget]);
+  }, [pathname]);
 
-  // Geçiş yoksa bu bileşen hiçbir şey yapmaz (Performans tasarrufu)
+  // Her karede yeni sahneyi arka planda render et (tNewScene beslemesi)
+  useFrame(() => {
+    if (isTransitioning) {
+      materialRef.current.visible = false;
+      gl.setRenderTarget(newSceneTarget);
+      gl.render(scene, camera);
+      gl.setRenderTarget(null);
+      materialRef.current.visible = true;
+      
+      materialRef.current.uniforms.tNewScene.value = newSceneTarget.texture;
+    }
+  });
+
   if (!isTransitioning) return null;
 
   return (
-    // Orthographic kamera ihtiyacını ortadan kaldıran 
-    // ekrana yapışık (screen-space) bir quad yaratıyoruz
     <mesh>
       <planeGeometry args={[2, 2]} />
       <shaderMaterial
         ref={materialRef}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
+        transparent
+        depthTest={false}
         uniforms={{
-          tOldScene: { value: prevSceneTarget.texture },
-          tNewScene: { value: null }, // R3F arka planı otomatik çizeceği için bunu boş bırakıyoruz, saydamlık ile alttakini göstereceğiz
+          tOldScene: { value: oldSceneTarget.texture },
+          tNewScene: { value: null },
           uProgress: { value: 1.0 },
-          uType: { value: transitionType },
-          uResolution: { value: new THREE.Vector2(size.width, size.height) }
+          uType: { value: 3 }, // Portal
+          uResolution: { value: new THREE.Vector2(size.width, size.height) },
+          uPortalCenter: { value: new THREE.Vector2(portalCenter.x, portalCenter.y) }
         }}
-        transparent={true}
-        depthTest={false} // Tüm 3D objelerin BİR NUMARALI ÖNÜNDE dursun
-        depthWrite={false}
       />
     </mesh>
   );

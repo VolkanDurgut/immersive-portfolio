@@ -12,8 +12,8 @@ export default function MouseTrail() {
   const { mouse, camera } = useThree();
   const cursorMode = useNavStore((state) => state.cursorMode);
 
-  const lineRef = useRef<THREE.Line>(null!);
-  const materialRef = useRef<THREE.ShaderMaterial>(null!);
+  const lineRef = useRef<any>(null);
+  const materialRef = useRef<any>(null);
   const isReady = useRef(false);
 
   // Erişilebilirlik: Kullanıcı animasyonları kapatmışsa trail'i çalıştırma

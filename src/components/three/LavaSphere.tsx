@@ -1,16 +1,15 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// 🚀 3D Simplex Noise Algoritması (Ashima Arts)
+// --- snoise3 FONKSİYONLARI AYNI KALIYOR ---
 const snoise3 = `
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
   vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
   float snoise(vec3 v) {
     const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
     const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
@@ -24,10 +23,7 @@ const snoise3 = `
     vec3 x2 = x0 - i2 + C.yyy;
     vec3 x3 = x0 - D.yyy;
     i = mod289(i);
-    vec4 p = permute( permute( permute(
-               i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-             + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
-             + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+    vec4 p = permute( permute( permute( i.z + vec4(0.0, i1.z, i2.z, 1.0 )) + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
     float n_ = 0.142857142857;
     vec3  ns = n_ * D.wyz - D.xzx;
     vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
@@ -60,7 +56,6 @@ const vertexShader = `
   uniform float uTime;
   varying float vNoise;
 
-  // 🚀 fBm: 3 katmanlı gürültü ile organik yüzey
   float fbm(vec3 x) {
     float v = 0.0;
     float a = 0.5;
@@ -74,13 +69,9 @@ const vertexShader = `
   }
 
   void main() {
-    // Zamanla değişen organik dalgalanma
     float noiseVal = fbm(position * 1.5 + uTime * 0.3);
     vNoise = noiseVal;
-
-    // Yüzeyi normal doğrultusunda gürültü kadar şişir
     vec3 newPosition = position + normal * (noiseVal * 0.3);
-    
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
 `;
@@ -89,14 +80,12 @@ const fragmentShader = `
   varying float vNoise;
 
   void main() {
-    // Magma renk paleti
-    vec3 darkCrust = vec3(0.05, 0.0, 0.0);    // Soğumuş siyah/kırmızı kabuk
-    vec3 magmaGlow = vec3(1.0, 0.2, 0.0);    // Parlak turuncu lav
-    vec3 extremeHeat = vec3(1.0, 0.8, 0.2);  // En sıcak noktalar (sarı)
+    vec3 darkCrust = vec3(0.05, 0.0, 0.0);
+    vec3 magmaGlow = vec3(1.0, 0.2, 0.0);
+    vec3 extremeHeat = vec3(1.0, 0.8, 0.2);
     
     float mixVal = (vNoise + 1.0) * 0.5;
     
-    // Katmanlı renklendirme
     vec3 finalColor = mix(darkCrust, magmaGlow, smoothstep(0.1, 0.6, mixVal));
     finalColor = mix(finalColor, extremeHeat, smoothstep(0.6, 1.0, mixVal));
     
@@ -104,16 +93,26 @@ const fragmentShader = `
   }
 `;
 
-export default function LavaSphere() {
+// 🚀 YENİ: Dışarı açacağımız referans tipi
+export interface LavaRef {
+  speedMultiplier: number;
+}
+
+const LavaSphere = forwardRef<LavaRef, {}>((props, ref) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
+  
+  // 🚀 YENİ: Zamanı ve hız çarpanını tutan iç referans
+  const internalState = useRef({ speedMultiplier: 1.0, accumulatedTime: 0 });
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 }
-  }), []);
+  // Orkestra şefinin GSAP ile bu hıza müdahale etmesine izin veriyoruz
+  useImperativeHandle(ref, () => internalState.current);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
+    // R3F saatini (delta) hız çarpanı ile çarparak biriktiriyoruz (Zıplamaları önler)
+    internalState.current.accumulatedTime += delta * internalState.current.speedMultiplier;
+    
     if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+      materialRef.current.uniforms.uTime.value = internalState.current.accumulatedTime;
     }
   });
 
@@ -124,8 +123,11 @@ export default function LavaSphere() {
         ref={materialRef}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        uniforms={uniforms}
+        uniforms={{ uTime: { value: 0 } }}
       />
     </mesh>
   );
-}
+});
+
+LavaSphere.displayName = 'LavaSphere';
+export default LavaSphere;

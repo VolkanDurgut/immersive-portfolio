@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useRef } from 'react'; // useRef eklendi
+import { Suspense, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Bvh, AdaptiveDpr, AdaptiveEvents } from '@react-three/drei'; 
 import { Perf } from 'r3f-perf';
@@ -17,58 +17,78 @@ import KineticTypography from '../KineticTypography';
 import PageTransition from '../PageTransition';
 import CameraController from '../CameraController';
 import ProjectPortal from '../ProjectPortal';
+import LightSource from '../LightSource';
 
 import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
 import { useDevicePerformance } from '@/hooks/useDevicePerformance';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-
-// 🚀 YENİ: Parallax Hook'umuzu içe aktarıyoruz
 import { useParallax } from '@/hooks/useParallax';
 
-// 🚀 YENİ: Sahnenin içini yöneten alt bileşen (useParallax'ın useFrame kullanabilmesi için Canvas'ın içinde olmalı)
+// 🚀 Orkestra Şefimizi import ediyoruz
+import { useSceneOrchestrator } from '@/hooks/useSceneOrchestrator';
+
 function SceneContent({ tier, isReducedMotion, children }: any) {
-  // Katman referansları oluştur
   const backgroundRef = useRef<THREE.Group>(null!);
   const midgroundRef = useRef<THREE.Group>(null!);
   const foregroundRef = useRef<THREE.Group>(null!);
+  const [sunMesh, setSunMesh] = useState<THREE.Mesh | null>(null);
 
-  // Parallax hook'unu katmanlara bağla
+  // 🚀 ORKESTRA İÇİN TÜM REFERANSLAR BURADA TOPLANIYOR
+  const lookAtTarget = useRef(new THREE.Vector3(0, 0, 0));
+  const lavaRef = useRef<any>(null);
+  const gpgpuRef = useRef<any>(null);
+  const lightsRef = useRef<any>(null);
+
+  // 🚀 ORKESTRA ŞEFİNE TÜM YETKİLER VERİLDİ
+  useSceneOrchestrator({
+    lookAtTarget,
+    lavaRef,
+    gpgpuRef,
+    lightsRef
+  }, { 
+    enableCamera: true, 
+    enableLava: true, 
+    enableParticles: true, 
+    enableLights: true 
+  });
+
   useParallax([
-    { ref: backgroundRef, intensity: 0.2 }, // Arka plan: Yavaş
-    { ref: midgroundRef, intensity: 0.5 },  // Orta plan: Normal
-    { ref: foregroundRef, intensity: 0.8 }, // Ön plan: Hızlı
+    { ref: backgroundRef, intensity: 0.2 },
+    { ref: midgroundRef, intensity: 0.5 },
+    { ref: foregroundRef, intensity: 0.8 },
   ]);
 
   return (
     <>
-      <CameraController />
-      <AtmosphericLights />
+      <CameraController targetRef={lookAtTarget} />
+      
+      {/* 🚀 Işıkları Orkestraya Bağlıyoruz */}
+      <AtmosphericLights ref={lightsRef} />
       <SceneAtmosphere />
       
+      <LightSource ref={setSunMesh} position={[0, 10, -5]} />
+
       {children}
 
       {!isReducedMotion ? (
         <>
-          {/* 🚀 ARKA PLAN KATMANI (z: -15) */}
           <group ref={backgroundRef} position={[0, 0, -15]}>
-            <GPGPUParticles tier={tier} />
+            {/* 🚀 Parçacıkları Orkestraya Bağlıyoruz */}
+            <GPGPUParticles tier={tier} ref={gpgpuRef} />
           </group>
 
-          {/* 🚀 ORTA PLAN KATMANI (z: -5) */}
           <group ref={midgroundRef} position={[0, 0, -5]}>
-            <LavaSphere />
+            <LavaSphere ref={lavaRef} />
             <InteractiveGallery />
           </group>
 
-          {/* 🚀 ÖN PLAN KATMANI (z: 0 ila +4) */}
           <group ref={foregroundRef} position={[0, 0, 0]}>
             <KineticTypography />
-            {/* Portallar yakında dursun */}
             <ProjectPortal position={[-4, 1, 3]} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
             <ProjectPortal position={[4, -1, 3]} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
           </group>
 
-          {tier !== 'low' && <CinematicEffects tier={tier} />}
+          {tier !== 'low' && <CinematicEffects tier={tier} sunMesh={sunMesh} />}
         </>
       ) : (
         <points>
@@ -110,7 +130,6 @@ export default function MainScene({ children }: { children?: React.ReactNode }) 
 
           <Bvh firstHitOnly>
             <Suspense fallback={<Loader />}>
-              {/* 🚀 OPTİMİZASYON: İçeriği alt bileşene (SceneContent) taşıdık */}
               <SceneContent tier={tier} isReducedMotion={isReducedMotion}>
                 {children}
               </SceneContent>

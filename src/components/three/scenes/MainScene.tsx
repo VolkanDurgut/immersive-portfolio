@@ -18,8 +18,8 @@ import PageTransition from '../PageTransition';
 import CameraController from '../CameraController';
 import ProjectPortal from '../ProjectPortal';
 import LightSource from '../LightSource';
-import MouseTrail from '../MouseTrail';
-import SceneText from '../SceneText'; // 🚀 YENİ EKLENDİ
+import MouseTrail from '../MouseTrail'; // 🚀 Entegrasyon Importu
+import SceneText from '../SceneText'; 
 
 import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
 import { useDevicePerformance } from '@/hooks/useDevicePerformance';
@@ -28,7 +28,7 @@ import { useParallax } from '@/hooks/useParallax';
 
 // 🚀 Merkezi Yöneticiler (Orchestrators & Choreographers)
 import { useSceneOrchestrator } from '@/hooks/useSceneOrchestrator';
-import { useScrollChoreography } from '@/hooks/useScrollChoreography'; // 🚀 YENİ EKLENDİ
+import { useScrollChoreography } from '@/hooks/useScrollChoreography'; 
 
 function SceneContent({ tier, isReducedMotion, children }: any) {
   const backgroundRef = useRef<THREE.Group>(null!);
@@ -79,7 +79,8 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
   return (
     <>
       <CameraController targetRef={lookAtTarget} />
-      <MouseTrail />
+      <MouseTrail /> {/* 🚀 Entegrasyon Yerleşimi */}
+      
       <AtmosphericLights ref={lightsRef} />
       <SceneAtmosphere />
       <LightSource ref={setSunMesh} position={[0, 10, -5]} />
@@ -94,15 +95,11 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
 
           <group ref={midgroundRef} position={[0, 0, -5]}>
             <LavaSphere ref={lavaRef} />
-            {/* 🚀 Referansı Bağladık */}
             <InteractiveGallery ref={galleryRef} />
           </group>
 
           <group ref={foregroundRef} position={[0, 0, 0]}>
-            {/* 🚀 Yeni 3D Metin Sistemimiz */}
             <SceneText tier={tier} />
-
-            {/* 🚀 Referansı Bağladık */}
             <KineticTypography ref={typoRef} />
             
             <ProjectPortal position={[-4, 1, 3]} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />

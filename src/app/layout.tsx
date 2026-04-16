@@ -1,34 +1,31 @@
 import type { Metadata } from 'next';
-// 🚀 YENİ: Google Font optimizasyonları
 import { Space_Grotesk, JetBrains_Mono, Inter } from 'next/font/google';
 import './globals.css';
 
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-// --- FONT KONFİGÜRASYONLARI ---
-// 1. Display Font: Başlıklar, devasa tipografiler ve vurgular için (Siber/Teknoloji hissi)
+// 🚀 YENİ: Lenis Virtual Scroll Sarmalayıcısı
+import SmoothScroll from '@/components/SmoothScroll';
+
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
 });
 
-// 2. Mono Font: Koordinatlar, butonlar, sayaçlar ve terminal yazıları için
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   display: 'swap',
 });
 
-// 3. Body Font: Uzun okuma metinleri ve açıklamalar için (Temiz, okunaklı)
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'swap',
 });
 
-// --- SEO VE META ETİKETLERİ ---
 export const metadata: Metadata = {
   title: 'Voberix | Creative Developer Portfolio',
   description: 'WebGL, 3D animasyonlar ve siberpunk tasarımlarla sınırları zorlayan interaktif portfolyo deneyimi.',
@@ -81,7 +78,6 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      {/* 🚀 YENİ: Font variable'larını body'ye entegre ettik ve Tailwind'den gelecek 'font-body', 'bg-bg-deep' gibi sınıfları ekledik */}
       <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${inter.variable} antialiased font-body bg-bg-deep text-white`}>
         
         <noscript>
@@ -94,7 +90,10 @@ export default function RootLayout({
           </div>
         </noscript>
 
-        {children}
+        {/* 🚀 YENİ: Lenis Wrapper'ı tüm children'ın dışına sardık */}
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
 
         <Analytics />
         <SpeedInsights />

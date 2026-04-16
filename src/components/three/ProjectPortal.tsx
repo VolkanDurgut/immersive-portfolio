@@ -12,10 +12,9 @@ interface ProjectPortalProps {
   title: string;
   category: string;
   slug: string;
-  scale?: number; // 🚀 DÜZELTME 1: TypeScript'e scale prop'unu kabul etmesini söyledik
+  scale?: number;
 }
 
-// Sabit referanslar bileşen dışında — her frame yeni obje oluşturulmuyor
 const _scale = new THREE.Vector3();
 
 export default function ProjectPortal({ position, title, category, slug, scale = 1 }: ProjectPortalProps) {
@@ -31,7 +30,6 @@ export default function ProjectPortal({ position, title, category, slug, scale =
       meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
       meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2;
 
-      // Mesh'in kendi içindeki hover animasyonu
       const targetScale = hovered ? 1.2 : 1.0;
       _scale.setScalar(targetScale);
       meshRef.current.scale.lerp(_scale, 0.1);
@@ -48,12 +46,10 @@ export default function ProjectPortal({ position, title, category, slug, scale =
     if (setPortalCenter) {
       setPortalCenter(uvX, uvY);
     }
-
     router.push(`/projects/${slug}`);
   };
 
   return (
-    // 🚀 DÜZELTME 2: MainScene'den gelen "scale" değerini ana gruba bağladık
     <group position={position} scale={scale}>
       <mesh
         ref={meshRef}
@@ -61,17 +57,19 @@ export default function ProjectPortal({ position, title, category, slug, scale =
         onPointerOver={(e) => { e.stopPropagation(); setHovered(true); setCursorMode('hover'); }}
         onPointerOut={(e) => { e.stopPropagation(); setHovered(false); setCursorMode('default'); }}
       >
-        <octahedronGeometry args={[0.6, 0]} />
+        {/* 🚀 DÜZELTME: Boyut 0.6'dan 0.3'e düşürüldü */}
+        <octahedronGeometry args={[0.3, 0]} />
+        
+        {/* 🚀 DÜZELTME: Wireframe kaldırıldı. Hover'da parlak, normalde soft solid materyal */}
         <meshStandardMaterial
           color={hovered ? '#22d3ee' : '#d946ef'}
-          wireframe
           emissive={hovered ? '#22d3ee' : '#d946ef'}
-          emissiveIntensity={2}
+          emissiveIntensity={hovered ? 3 : 0.8}
         />
       </mesh>
 
       <Html
-        position={[1.5, 0, 0]} // Tooltip'in portaldan uzaklığını ufak bir miktar açtık ki küçülünce üst üste binmesin
+        position={[1.5, 0, 0]}
         center
         occlude
         style={{

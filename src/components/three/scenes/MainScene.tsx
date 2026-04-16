@@ -100,9 +100,9 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
             <SceneText tier={tier} />
             <KineticTypography ref={typoRef} />
             
-            {/* 🚀 DÜZELTME: Portallar scale=0.3 ile küçültüldü ve sağ/sol kenarlara daha nazik oturtuldu */}
-            <ProjectPortal position={[-5, 1.5, 3]} scale={0.3} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
-            <ProjectPortal position={[5, -1.5, 3]} scale={0.3} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
+            {/* 🚀 DÜZELTME: Pozisyonlar [-6, 1, 1] ve [6, -1, 1] olarak sahne kenarlarına itildi */}
+            <ProjectPortal position={[-6, 1, 1]} scale={1} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
+            <ProjectPortal position={[6, -1, 1]} scale={1} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
           </group>
 
           {tier !== 'low' && <CinematicEffects tier={tier} sunMesh={sunMesh} />}

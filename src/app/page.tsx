@@ -19,7 +19,7 @@ export default function Home() {
   const cursorRef = useRef<HTMLDivElement>(null);
 
   // Proje isimlerini sadece navigasyon butonları için tutuyoruz
-  const navItems = ['home', 'project-1', 'project-2'];
+  const navItems: Array<'home' | 'project-1' | 'project-2'> = ['home', 'project-1', 'project-2'];
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

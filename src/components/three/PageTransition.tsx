@@ -73,7 +73,7 @@ const fragmentShader = `
 export default function PageTransition() {
   const { gl, scene, camera, size } = useThree();
   const pathname = usePathname();
-  const { portalCenter, setIsTransitioning: setGlobalTransition } = useNavStore();
+  const { portalCenter, setTransitioning: setGlobalTransition } = useNavStore();
   
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionType, setTransitionType] = useState(3); // Portal varsayılan

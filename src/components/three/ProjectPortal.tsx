@@ -12,17 +12,17 @@ interface ProjectPortalProps {
   title: string;
   category: string;
   slug: string;
+  scale?: number; // 🚀 DÜZELTME 1: TypeScript'e scale prop'unu kabul etmesini söyledik
 }
 
 // Sabit referanslar bileşen dışında — her frame yeni obje oluşturulmuyor
 const _scale = new THREE.Vector3();
 
-export default function ProjectPortal({ position, title, category, slug }: ProjectPortalProps) {
+export default function ProjectPortal({ position, title, category, slug, scale = 1 }: ProjectPortalProps) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const [hovered, setHovered] = useState(false);
   const router = useRouter();
   
-  // 🚀 YENİ: setPortalCenter'ı store'dan çekiyoruz
   const { setCursorMode, setPortalCenter } = useNavStore();
 
   useFrame((state) => {
@@ -31,34 +31,30 @@ export default function ProjectPortal({ position, title, category, slug }: Proje
       meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
       meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2;
 
+      // Mesh'in kendi içindeki hover animasyonu
       const targetScale = hovered ? 1.2 : 1.0;
       _scale.setScalar(targetScale);
       meshRef.current.scale.lerp(_scale, 0.1);
     }
   });
 
-  // 🚀 YENİ: Tıklama Event'ini yakalıyoruz
   const handleClick = (e: any) => {
     e.stopPropagation();
     setCursorMode('default');
 
-    // 1. Ekran koordinatlarını (Pixel) Shader UV koordinatlarına (0.0 - 1.0) çeviriyoruz
     const uvX = e.clientX / window.innerWidth;
-    
-    // 2. WebGL'de Y ekseni aşağıdan yukarı olduğu için 1.0'dan çıkararak tersine çeviriyoruz
     const uvY = 1.0 - (e.clientY / window.innerHeight); 
 
-    // 3. Portalın patlayacağı merkez noktasını sisteme (Zustand) bildir
     if (setPortalCenter) {
       setPortalCenter(uvX, uvY);
     }
 
-    // 4. Yeni sayfaya (projeye) git (Geçiş animasyonu otomatik tetiklenecek)
     router.push(`/projects/${slug}`);
   };
 
   return (
-    <group position={position}>
+    // 🚀 DÜZELTME 2: MainScene'den gelen "scale" değerini ana gruba bağladık
+    <group position={position} scale={scale}>
       <mesh
         ref={meshRef}
         onClick={handleClick}
@@ -75,7 +71,7 @@ export default function ProjectPortal({ position, title, category, slug }: Proje
       </mesh>
 
       <Html
-        position={[1, 0, 0]}
+        position={[1.5, 0, 0]} // Tooltip'in portaldan uzaklığını ufak bir miktar açtık ki küçülünce üst üste binmesin
         center
         occlude
         style={{

@@ -19,6 +19,7 @@ import CameraController from '../CameraController';
 import ProjectPortal from '../ProjectPortal';
 import LightSource from '../LightSource';
 import MouseTrail from '../MouseTrail';
+import SceneText from '../SceneText'; // 🚀 YENİ EKLENDİ
 
 import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
 import { useDevicePerformance } from '@/hooks/useDevicePerformance';
@@ -98,6 +99,9 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
           </group>
 
           <group ref={foregroundRef} position={[0, 0, 0]}>
+            {/* 🚀 Yeni 3D Metin Sistemimiz */}
+            <SceneText tier={tier} />
+
             {/* 🚀 Referansı Bağladık */}
             <KineticTypography ref={typoRef} />
             

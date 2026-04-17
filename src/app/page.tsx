@@ -15,12 +15,14 @@ export default function Home() {
     currentView, setView, isTransitioning, 
     cursorMode, setCursorMode, isLoading,
     isContactOpen, setContactOpen,
-    loadProgress // 🚀 YENİ: Hata buradan kaynaklanıyordu, state'i store'dan çekiyoruz
+    loadProgress
   } = useNavStore();
+  
   const cursorRef = useRef<HTMLDivElement>(null);
 
-  // Proje isimlerini sadece navigasyon butonları için tutuyoruz
+  // Proje sayısı hesaplama (01 / 03 formatı için)
   const navItems: Array<'home' | 'project-1' | 'project-2'> = ['home', 'project-1', 'project-2'];
+  const currentIndex = navItems.indexOf(currentView) + 1;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,6 +60,7 @@ export default function Home() {
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-bg-deep text-text-main cursor-none">
 
+      {/* 🚀 AŞAMA 1 VE 2 SİNEMATİK YÜKLEME EKRANI */}
       <div 
         role="status"
         aria-live="polite"
@@ -65,23 +68,16 @@ export default function Home() {
           ${isLoading ? 'opacity-100 pointer-events-auto bg-bg-deep/95 backdrop-blur-md' : 'opacity-0 pointer-events-none scale-125 blur-2xl'}
         `}
       >
-        {/* Aşama 1: Logo (Pure CSS Pulse) */}
         <h1 className="text-5xl md:text-7xl font-display font-black tracking-[0.2em] text-text-main animate-pulse-neon mb-6 select-none">
           VOBERIX<span className="text-neon-cyan">.</span>
         </h1>
-
-        {/* Aşama 1: Koordinat Terminali (Pure CSS Steps) */}
         <div className="text-neon-cyan font-mono text-xs md:text-sm tracking-widest loader-coords h-6 mb-12 opacity-80" />
-
-        {/* Aşama 2: R3F Asset Yükleme Çubuğu (Zustand loadProgress) */}
         <div className="w-64 h-[2px] bg-white/10 rounded overflow-hidden relative">
           <div 
             className="h-full bg-neon-cyan transition-all duration-300 shadow-[0_0_15px_var(--color-neon-cyan)]" 
             style={{ width: `${loadProgress}%` }} 
           />
         </div>
-        
-        {/* Yüzde ve Metin */}
         <div className="flex justify-between w-64 mt-3">
           <div className="text-[10px] text-text-muted font-mono uppercase tracking-[0.3em]">
             Sistem Verileri
@@ -92,6 +88,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 🚀 KUSURSUZ CUSTOM CURSOR */}
       <div 
         ref={cursorRef}
         aria-hidden="true"
@@ -103,62 +100,64 @@ export default function Home() {
         <div className={`absolute rounded-full border border-text-main transition-all duration-300 ${cursorMode === 'hover' ? 'w-16 h-16 scale-100 opacity-100' : 'w-6 h-6 scale-75 opacity-50'}`} />
       </div>
 
+      {/* 🚀 3D SAHNE KATMANI */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <MainScene />
       </div>
 
-      <div className={`absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-8 md:p-16 transition-opacity duration-500 ease-in-out ${(isTransitioning || isContactOpen) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+      {/* 🚀 YENİ: ACTIVE THEORY MİNİMALİST UI KATMANI */}
+      <div className={`absolute inset-0 z-10 pointer-events-none p-8 md:p-12 transition-opacity duration-500 ease-in-out ${(isTransitioning || isContactOpen) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
         
-        <header className="flex justify-between items-center pointer-events-auto">
-          {/* 🚀 YENİ: Başlıklarda Space Grotesk (font-display) kullanımı */}
-          <div className="font-display text-2xl font-black tracking-widest text-text-main">
+        {/* Üst Kısım: Sadece Logo ve Sağ Üst Menü */}
+        <header className="flex justify-between items-start pointer-events-auto mix-blend-difference">
+          {/* Sol Logo - Tıklanınca en başa döner */}
+          <button
+            onClick={() => setView('home')}
+            onMouseEnter={() => setCursorMode('hover')}
+            onMouseLeave={() => setCursorMode('default')}
+            className="font-display text-xl md:text-2xl font-black tracking-widest text-text-main focus-visible:outline-none"
+          >
             VOBERIX<span className="text-neon-cyan">.</span>
-          </div>
+          </button>
           
-          <div className="flex items-center gap-8">
-            {/* 🚀 YENİ: Terminal yazılarında JetBrains Mono (font-mono) ve ikincil gri (text-text-muted) kullanımı */}
-            <div className="hidden md:block text-xs font-mono text-text-muted uppercase tracking-widest">
-              KORDİNATLAR: [ {currentView.replace('-', ' ')} ]
-            </div>
+          {/* Sağ Navigasyon: Temiz, Çizgili, Minimal */}
+          <div className="flex items-center gap-4 md:gap-6 text-[10px] md:text-xs font-mono tracking-[0.2em] text-text-main">
+            <button
+              onClick={() => setView('project-1')} // Veya dilediğin projeye yönlendirebilirsin
+              onMouseEnter={() => setCursorMode('hover')}
+              onMouseLeave={() => setCursorMode('default')}
+              className="hover:text-neon-cyan transition-colors focus-visible:outline-none"
+            >
+              [ WORK ]
+            </button>
+            
+            <div className="w-8 md:w-16 h-[1px] bg-text-main/30" /> {/* Yatay Ayraç Çizgisi */}
             
             <button
               onClick={() => setContactOpen(true)}
               onMouseEnter={() => setCursorMode('hover')}
               onMouseLeave={() => setCursorMode('default')}
-              className="text-sm font-mono tracking-widest text-neon-cyan hover:text-text-main transition-colors border border-neon-cyan/30 px-6 py-2 rounded-full hover:bg-neon-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-cyan"
+              className="hover:text-neon-cyan transition-colors focus-visible:outline-none"
             >
               [ İLETİŞİM ]
             </button>
           </div>
         </header>
 
-        <div className="flex-1" />
+        {/* 🚀 YENİ: Sağ Alt Proje Sayacı (01 / 03 formatı) */}
+        <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 pointer-events-auto mix-blend-difference">
+          <div className="font-mono text-xs md:text-sm text-text-muted tracking-[0.3em] select-none">
+            <span className="text-text-main">0{currentIndex}</span> / 0{navItems.length}
+          </div>
+        </div>
 
-        <nav aria-label="Proje Navigasyonu" className="pointer-events-auto flex gap-6 md:gap-12 border-t border-text-main/10 pt-6">
-          {navItems.map((item, index) => (
-            <button
-              key={item}
-              disabled={isTransitioning}
-              onClick={() => setView(item)}
-              onMouseEnter={() => setCursorMode('hover')}
-              onMouseLeave={() => setCursorMode('default')}
-              className={`text-xs md:text-sm font-mono uppercase tracking-widest transition-all duration-300 hover:text-neon-cyan relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-cyan rounded
-                ${currentView === item ? 'text-text-main' : 'text-text-muted'}
-              `}
-            >
-              0{index + 1} {item.replace('-', ' ')}
-              {currentView === item && (
-                <span className="absolute -bottom-6 left-0 w-full h-[2px] bg-neon-cyan shadow-[0_0_10px_var(--color-neon-cyan)]" />
-              )}
-            </button>
-          ))}
-        </nav>
       </div>
 
+      {/* 🚀 YENİ: Daha Küçük, Zarif Geçiş (Hedefe Kilitleniliyor) Ekranı */}
       <div className={`absolute inset-0 z-20 pointer-events-none bg-black/40 backdrop-blur-sm transition-opacity duration-300 flex items-center justify-center ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="flex items-center gap-4">
-          <div className="w-2 h-2 bg-neon-cyan rounded-full animate-ping" />
-          <div className="text-neon-cyan font-mono text-sm uppercase tracking-widest animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="w-1.5 h-1.5 bg-neon-cyan rounded-full animate-ping" />
+          <div className="text-neon-cyan font-mono text-xs uppercase tracking-[0.3em] animate-pulse">
             [ HEDEFE KİLİTLENİLİYOR ]
           </div>
         </div>

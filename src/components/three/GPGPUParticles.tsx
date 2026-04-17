@@ -32,8 +32,8 @@ const simulationFragmentShader = `
   uniform vec2 uMouse;
   uniform int uShape;
   uniform float uExplosion;
-  uniform float uEdgeForce;  // 🚀 YENİ: Kenara itme kuvveti (İletişim formu için)
-  uniform float uMouseForce; // 🚀 YENİ: Mouse dağıtma kuvveti (Hover için)
+  uniform float uEdgeForce;  
+  uniform float uMouseForce; 
   varying vec2 vUv;
 
   float rand(vec2 co){
@@ -59,16 +59,14 @@ const simulationFragmentShader = `
 
     pos = mix(pos, targetPos, 0.03 * speedMult);
     
-    // 🚀 GÜNCEL: Dinamik mouse dağıtma kuvveti
     float dist = distance(pos.xy, uMouse * 20.0);
     if (dist < 4.0) {
       vec3 dir = normalize(pos - vec3(uMouse * 20.0, pos.z));
       pos += dir * (4.0 - dist) * uMouseForce * speedMult;
     }
 
-    // 🚀 YENİ: İletişim formu açıldığında parçacıkları kenarlara doğru it
     if (uEdgeForce > 0.0) {
-      vec2 centerDir = normalize(pos.xy + vec2(0.001)); // Sıfıra bölünmeyi engellemek için ufak bir offset
+      vec2 centerDir = normalize(pos.xy + vec2(0.001)); 
       pos.xy += centerDir * uEdgeForce * 0.8 * speedMult;
     }
 
@@ -98,8 +96,10 @@ const renderVertexShader = `
     vec3 pos = posData.xyz;
     float age = posData.w;
 
-    vec3 colorNear = vec3(0.0, 1.0, 1.0);
-    vec3 colorFar = vec3(1.0, 0.0, 1.0);
+    // 🚀 DÜZELTME: Active Theory tarzı minimalist, monokrom renk paleti
+    // Parçacıklar uzaktayken soğuk gri, yaklaştıkça neredeyse saf beyaza dönüşür
+    vec3 colorNear = vec3(0.9, 0.95, 1.0); 
+    vec3 colorFar = vec3(0.4, 0.5, 0.6); 
     vec3 baseColor = mix(colorFar, colorNear, smoothstep(-5.0, 5.0, pos.z + pos.y));
     
     vec3 finalColor = mix(vec3(1.0), baseColor, smoothstep(0.0, 0.4, age));
@@ -110,7 +110,8 @@ const renderVertexShader = `
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     
-    float baseSize = 25.0; 
+    // 🚀 DÜZELTME: Parçacık boyutları "gürültü" yapmaması için küçültüldü (25.0 -> 16.0)
+    float baseSize = 16.0; 
     gl_PointSize = (baseSize / -mvPosition.z) * (1.0 - age * 0.5);
     
     gl_Position = projectionMatrix * mvPosition;
@@ -134,10 +135,8 @@ const renderFragmentShader = `
   }
 `;
 
-// 🚀 YENİ: Bileşeni forwardRef ile sarıyoruz
 const GPGPUParticles = forwardRef<GPGPURef, { tier: string }>(({ tier }, ref) => {
   
-  // 🚀 Orkestranın müdahale edeceği iç durum objesi
   const internalState = useRef<GPGPURef>({
     shape: 0,
     explosion: 0,
@@ -221,8 +220,8 @@ const GPGPUParticles = forwardRef<GPGPURef, { tier: string }>(({ tier }, ref) =>
       uMouse: { value: new THREE.Vector2(0, 0) },
       uShape: { value: 0 },
       uExplosion: { value: 0 },
-      uEdgeForce: { value: 0 },   // 🚀 YENİ
-      uMouseForce: { value: 0.15 } // 🚀 YENİ
+      uEdgeForce: { value: 0 },
+      uMouseForce: { value: 0.15 } 
     }
   }), [initialData, kureData, kutuData, torusData]);
 
@@ -249,7 +248,6 @@ const GPGPUParticles = forwardRef<GPGPURef, { tier: string }>(({ tier }, ref) =>
   useFrame((state) => {
     simMaterial.uniforms.uTime.value = state.clock.elapsedTime;
     
-    // 🚀 Değerler artık iç referanstan (Orkestradan) geliyor
     simMaterial.uniforms.uShape.value = Math.floor(internalState.current.shape);
     simMaterial.uniforms.uExplosion.value = internalState.current.explosion;
     simMaterial.uniforms.uEdgeForce.value = internalState.current.edgeForce;

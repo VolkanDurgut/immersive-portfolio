@@ -5,17 +5,17 @@ import { Environment, ContactShadows } from '@react-three/drei';
 export default function SceneAtmosphere() {
   return (
     <>
-      {/* 🚀 OPTİMİZASYON: <fogExp2 attach="fog" /> etiketi tamamen silindi!
-          Çünkü sisin rengi ve yoğunluğu artık görünümlere göre GSAP tarafından
-          AtmosphericLights.tsx içerisinde dinamik olarak yönetiliyor. */}
+      {/* 🚀 DÜZELTME: Active Theory tarzı "Blackout" atmosferi için zifiri siyah ve yoğun (0.04) sis geri eklendi.
+          Bu sayede uzaktaki objeler neon gibi parlamak yerine karanlıkta yavaşça kaybolacak. */}
+      <fogExp2 attach="fog" args={['#000000', 0.04]} />
 
-      {/* Çevre Aydınlatması (HDRI): 'city' preseti, siberpunk neon yansımalar için kusursuzdur. */}
+      {/* Çevre Aydınlatması (HDRI): Cam ve metal yansımaları için tutuyoruz ancak sis sayesinde sahneyi aydınlatamayacak */}
       <Environment preset="city" />
 
-      {/* Zemin Gölgeleri (ContactShadows): Objelerin havada süzülmemesi için sahte ama çok şık bir zemin gölgesi */}
+      {/* Zemin Gölgeleri (ContactShadows): Zemin illüzyonu için daha keskin bir siyah gölge */}
       <ContactShadows 
         position={[0, -2.5, 0]} 
-        opacity={0.6} 
+        opacity={0.8} 
         scale={20} 
         blur={2.5} 
         far={10} 

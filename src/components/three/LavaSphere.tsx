@@ -84,9 +84,10 @@ const fragmentShader = `
   varying float vNoise;
 
   void main() {
-    vec3 darkCrust = vec3(0.05, 0.0, 0.0);
-    vec3 magmaGlow = vec3(1.0, 0.2, 0.0);
-    vec3 extremeHeat = vec3(1.0, 0.8, 0.2);
+    // 🚀 DÜZELTME: Active Theory karanlığına uygun daha kısık köz/magma renkleri
+    vec3 darkCrust = vec3(0.02, 0.0, 0.0); // Neredeyse tamamen siyah bir kabuk
+    vec3 magmaGlow = vec3(0.8, 0.15, 0.0); // Turuncu parlama biraz kısıldı
+    vec3 extremeHeat = vec3(0.8, 0.5, 0.1); // Patlayan güneşten, ağır magmaya geçiş
     
     float mixVal = (vNoise + 1.0) * 0.5;
     vec3 finalColor = mix(darkCrust, magmaGlow, smoothstep(0.1, 0.6, mixVal));
@@ -95,7 +96,6 @@ const fragmentShader = `
   }
 `;
 
-// 🚀 YENİ: Dışarı açacağımız referans arayüzü
 export interface LavaRef {
   speedMultiplier: number;
   mesh: THREE.Mesh | null;
@@ -105,19 +105,16 @@ const LavaSphere = forwardRef<LavaRef, {}>((props, ref) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
   const meshRef = useRef<THREE.Mesh>(null!);
 
-  // Zamanı ve hızı tutan obje
   const api = useMemo(() => ({
     speedMultiplier: 1.0,
     get mesh() { return meshRef.current; }
   }), []);
 
-  // Orkestraya ve GSAP'a objeyi pasla
   useImperativeHandle(ref, () => api);
 
   const timeState = useRef({ accumulated: 0 });
 
   useFrame((state, delta) => {
-    // 🚀 Hız çarpanı ile zamanı biriktir (GSAP buradan kontrol edecek)
     timeState.current.accumulated += delta * api.speedMultiplier;
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = timeState.current.accumulated;
@@ -125,7 +122,6 @@ const LavaSphere = forwardRef<LavaRef, {}>((props, ref) => {
   });
 
   return (
-    // 🚀 DÜZELTME: Scale 0.6'ya düşürüldü, position sol-alt-arka köşeye çekildi
     <mesh ref={meshRef} position={[-3, -1.5, -2]} scale={0.6}>
       <sphereGeometry args={[1, 64, 64]} />
       <shaderMaterial

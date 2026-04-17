@@ -20,7 +20,6 @@ export default function Home() {
   
   const cursorRef = useRef<HTMLDivElement>(null);
 
-  // Proje sayısı hesaplama (01 / 03 formatı için)
   const navItems: Array<'home' | 'project-1' | 'project-2'> = ['home', 'project-1', 'project-2'];
   const currentIndex = navItems.indexOf(currentView) + 1;
 
@@ -60,7 +59,7 @@ export default function Home() {
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-bg-deep text-text-main cursor-none">
 
-      {/* 🚀 AŞAMA 1 VE 2 SİNEMATİK YÜKLEME EKRANI */}
+      {/* YÜKLEME EKRANI */}
       <div 
         role="status"
         aria-live="polite"
@@ -88,7 +87,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 🚀 KUSURSUZ CUSTOM CURSOR */}
+      {/* KUSURSUZ CUSTOM CURSOR */}
       <div 
         ref={cursorRef}
         aria-hidden="true"
@@ -100,17 +99,18 @@ export default function Home() {
         <div className={`absolute rounded-full border border-text-main transition-all duration-300 ${cursorMode === 'hover' ? 'w-16 h-16 scale-100 opacity-100' : 'w-6 h-6 scale-75 opacity-50'}`} />
       </div>
 
-      {/* 🚀 3D SAHNE KATMANI */}
+      {/* 3D SAHNE KATMANI */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <MainScene />
       </div>
 
-      {/* 🚀 YENİ: ACTIVE THEORY MİNİMALİST UI KATMANI */}
+      {/* HTML BAŞLIK BLOĞU KALDIRILDI - BOŞLUK TUTUCU EKLENDİ */}
+      <div className="pointer-events-none absolute inset-0 z-0" />
+
+      {/* ACTIVE THEORY MİNİMALİST UI KATMANI */}
       <div className={`absolute inset-0 z-10 pointer-events-none p-8 md:p-12 transition-opacity duration-500 ease-in-out ${(isTransitioning || isContactOpen) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
         
-        {/* Üst Kısım: Sadece Logo ve Sağ Üst Menü */}
         <header className="flex justify-between items-start pointer-events-auto mix-blend-difference">
-          {/* Sol Logo - Tıklanınca en başa döner */}
           <button
             onClick={() => setView('home')}
             onMouseEnter={() => setCursorMode('hover')}
@@ -120,10 +120,9 @@ export default function Home() {
             VOBERIX<span className="text-neon-cyan">.</span>
           </button>
           
-          {/* Sağ Navigasyon: Temiz, Çizgili, Minimal */}
           <div className="flex items-center gap-4 md:gap-6 text-[10px] md:text-xs font-mono tracking-[0.2em] text-text-main">
             <button
-              onClick={() => setView('project-1')} // Veya dilediğin projeye yönlendirebilirsin
+              onClick={() => setView('project-1')}
               onMouseEnter={() => setCursorMode('hover')}
               onMouseLeave={() => setCursorMode('default')}
               className="hover:text-neon-cyan transition-colors focus-visible:outline-none"
@@ -131,7 +130,7 @@ export default function Home() {
               [ WORK ]
             </button>
             
-            <div className="w-8 md:w-16 h-[1px] bg-text-main/30" /> {/* Yatay Ayraç Çizgisi */}
+            <div className="w-8 md:w-16 h-[1px] bg-text-main/30" /> 
             
             <button
               onClick={() => setContactOpen(true)}
@@ -144,16 +143,14 @@ export default function Home() {
           </div>
         </header>
 
-        {/* 🚀 YENİ: Sağ Alt Proje Sayacı (01 / 03 formatı) */}
         <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 pointer-events-auto mix-blend-difference">
           <div className="font-mono text-xs md:text-sm text-text-muted tracking-[0.3em] select-none">
             <span className="text-text-main">0{currentIndex}</span> / 0{navItems.length}
           </div>
         </div>
-
       </div>
 
-      {/* 🚀 YENİ: Daha Küçük, Zarif Geçiş (Hedefe Kilitleniliyor) Ekranı */}
+      {/* GEÇİŞ EKRANI */}
       <div className={`absolute inset-0 z-20 pointer-events-none bg-black/40 backdrop-blur-sm transition-opacity duration-300 flex items-center justify-center ${isTransitioning ? 'opacity-100' : 'opacity-0'}`}>
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-1.5 bg-neon-cyan rounded-full animate-ping" />

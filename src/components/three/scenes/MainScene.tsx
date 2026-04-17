@@ -20,7 +20,6 @@ import ProjectPortal from '../ProjectPortal';
 import LightSource from '../LightSource';
 import MouseTrail from '../MouseTrail';
 import SceneText from '../SceneText'; 
-// 🚀 DÜZELTME: GeometryShowcase import edildi
 import GeometryShowcase from '../GeometryShowcase'; 
 
 import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
@@ -87,7 +86,6 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
         <>
           <group ref={backgroundRef} position={[0, 0, -15]}>
             <GPGPUParticles tier={tier} ref={gpgpuRef} />
-            {/* 🚀 DÜZELTME: Geometriler arka plana eklendi */}
             <GeometryShowcase />
           </group>
 
@@ -97,10 +95,12 @@ function SceneContent({ tier, isReducedMotion, children }: any) {
           </group>
 
           <group ref={foregroundRef} position={[0, 0, 0]}>
+            {/* Sadece SceneText aktif bırakıldı, tier prop'u başarıyla aktarılıyor */}
             <SceneText tier={tier} />
-            <KineticTypography ref={typoRef} />
             
-            {/* 🚀 DÜZELTME: Pozisyonlar [-6, 1, 1] ve [6, -1, 1] olarak sahne kenarlarına itildi */}
+            {/* KineticTypography SceneText ile çakışmaması için yoruma alındı */}
+            {/* <KineticTypography ref={typoRef} /> */}
+            
             <ProjectPortal position={[-6, 1, 1]} scale={1} title="VOBERIX ALPHA" category="SYS_NODE_01" slug="voberix-alpha" />
             <ProjectPortal position={[6, -1, 1]} scale={1} title="KİNETİK ÇEKİRDEK" category="SYS_NODE_02" slug="kinetik-cekirdek" />
           </group>
